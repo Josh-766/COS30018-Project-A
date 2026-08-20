@@ -6,7 +6,7 @@ def main() -> None:
     memories = []
     context = []
 
-    print("Coder agent ready. Type 'exit' or 'quit' to stop.")
+    print("Type 'exit' or 'quit' to stop.")
 
     while True:
         try:
