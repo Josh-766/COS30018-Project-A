@@ -16,3 +16,29 @@ Router use the blackbboard to decide where to pass or could have a planner to ca
 Subagent -> Works on task, updates status of their stage -> passes to executor to text -> 
 
 How to set up agent communication -> If we need to split via multiple vm machines 
+
+Example
+Build a website
+-------------------
+Planner breaks down task
+
+Task 1: Frontend UI
+- Description : 
+- Status: TBA -> Untestede Code -> Tested Code (Tagged failed succeeded)
+- Assigned Agent: AgentId (for specific context)
+- Agent Task Memory: Str
+- Task Rescope trigger: Bool
+- Completed: Bool 
+
+Task 2: Backend API
+
+
+Task 3: Database
+
+
+Yes all 3
+----
+Pass for total review
+Result
+-------
+Project Review Phase
