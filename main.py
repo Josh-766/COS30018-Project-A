@@ -19,12 +19,14 @@ def main() -> None:
 
         relevant_memories = get_relevant_memories(text, memories)
 
+
         result = send_to_coder(
             text,
             context=context,
             memories=relevant_memories,
         )
 
+        
         context = result["context"]
         print(f"\nCoder: {result['text']}")
 
