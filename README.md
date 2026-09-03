@@ -15,8 +15,8 @@ Optional but Preferable
 Setup Doc References
 Sandbox stuff
 In Use
-/n https://minikube.sigs.k8s.io/docs/start/?arch=%2Fmacos%2Fx86-64%2Fstable%2Fbinary+download
-/n pip install kubernetes
+https://minikube.sigs.k8s.io/docs/start/?arch=%2Fmacos%2Fx86-64%2Fstable%2Fbinary+download
+pip install kubernetes
 
-/n https://agent-sandbox.sigs.k8s.io/docs/use-cases/examples/langchain/
-/n https://agent-sandbox.sigs.k8s.io/docs/use-cases/coding-agents/
+https://agent-sandbox.sigs.k8s.io/docs/use-cases/examples/langchain/
+https://agent-sandbox.sigs.k8s.io/docs/use-cases/coding-agents/
