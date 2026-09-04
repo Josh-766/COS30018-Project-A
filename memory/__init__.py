@@ -1,5 +1,5 @@
-"""Memory selection utilities."""
+"""Persistent memory utilities."""
 
-from .memory import get_relevant_memories
+from .memory import MemoryRecord, MemoryStore, get_relevant_memories
 
-__all__ = ["get_relevant_memories"]
+__all__ = ["MemoryRecord", "MemoryStore", "get_relevant_memories"]

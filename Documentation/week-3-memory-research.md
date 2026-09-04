@@ -600,3 +600,28 @@ The research produced the following design decisions:
 - OpenRouter API documentation for chat completions, embeddings and privacy.
 - Current COS30018 Project A repository source code.
 
+## 20. Small Prototype Experiment
+
+The first prototype intentionally implements only one claim:
+
+> After restarting the program, the coder can retrieve and follow a project
+> requirement or decision saved in an earlier session.
+
+The prototype uses explicit `/remember` commands, a local SQLite database and
+SQLite FTS5 keyword retrieval. Before each coder request, it retrieves up to three
+matching memories. Embeddings, automatic memory extraction, conversation
+summarisation and multi-agent sharing are outside this experiment's scope.
+
+### Procedure
+
+1. Start the program and enter `/remember The project must use Python 3.12`.
+2. Exit and start the program again.
+3. Enter `Create a Python API. Which Python version should it target?`.
+4. Record whether the saved memory was retrieved and whether the coder's answer
+   follows Python 3.12.
+5. Repeat without the saved memory as the baseline.
+
+The experiment passes when the memory condition retrieves the saved requirement
+and the coder follows it after restart. Keyword retrieval is expected to miss
+semantically related requests that share no useful terms; that limitation provides
+a reason for a later embedding experiment rather than expanding this prototype.

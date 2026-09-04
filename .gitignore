@@ -1,4 +1,8 @@
 .env
+.venv/
 __pycache__/
 *.py[cod]
 .DS_Store
+memory/*.db
+memory/*.db-shm
+memory/*.db-wal
