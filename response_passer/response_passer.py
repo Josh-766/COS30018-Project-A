@@ -1,7 +1,11 @@
-def response_passer(response):
-    start = response.find("<tool>")
-    end = response.find("</tool>")
+def response_passer(message, finish_reason=None):
+    if message.get("tool_calls"):
+        return "tool", message["tool_calls"]
 
+    if message.get("content"):
+        return "text", message["content"]
 
-def find_tool_call(response):
-    
+    if finish_reason == "length":
+        return "incomplete", None
+
+    return "empty", None
