@@ -1,24 +1,13 @@
-import subprocess
+"""Execute commands only in the session's Linux sandbox."""
+import shlex
 
-POWERSHELL_TOOL = {
-    "type": "function",
-    "function": {
-        "name": "powershell",
-        "description": "Run a PowerShell command in the terminal.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "command": {"type": "string", "description": "Command to run."}
-            },
-            "required": ["command"],
-        },
-    },
-}
-def execute_powershell(arguments):
-    result = subprocess.run(
-        ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", arguments["command"]],
-        capture_output=True,
-        text=True,
-        timeout=30,
-    )
-    return (result.stdout + result.stderr).strip()
+WORKSPACE = '/home/user/project'
+OUTPUT_LIMIT = 16000
+
+
+def execute_command(arguments, sandbox):
+    script = 'cd ' + WORKSPACE + ' && ' + arguments['command']
+    result = sandbox.run_command('timeout --kill-after=5s 30s sh -c ' + shlex.quote(script))
+    return {'stdout': result.stdout[:OUTPUT_LIMIT], 'stderr': result.stderr[:OUTPUT_LIMIT],
+            'exit_code': result.exit_code, 'timed_out': result.exit_code in (124, 137),
+            'truncated': len(result.stdout) > OUTPUT_LIMIT or len(result.stderr) > OUTPUT_LIMIT}

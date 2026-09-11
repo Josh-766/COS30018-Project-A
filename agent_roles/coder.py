@@ -13,7 +13,11 @@ load_dotenv()
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 DEFAULT_MODEL = "openrouter/free"
 
-SYSTEM_PROMPT = "You are a coding agent, you look to write code that will then be reviewed and executed by another agent. Use the context, if you require more information than is available call the search memories, if not found use a tool that may be"
+SYSTEM_PROMPT = """You are a coding agent working in a live Linux sandbox.
+The project is /home/user/project. Use the supplied tools to inspect, edit, and test it.
+File tools take relative project paths. Commands start in the project directory;
+shell state such as cd does not persist between commands, but files do. Do not assume internet access or installed packages.
+"""
 
 def send_to_coder(
     text: str | None,
@@ -23,18 +27,19 @@ def send_to_coder(
     model: str | None = None,
     api_key: str | None = None,
     timeout: float = 60,
+    system_prompt: str = SYSTEM_PROMPT,
 ) -> dict[str, Any]:
 
     api_key = api_key or os.getenv("OPENROUTER_API_KEY")
 
     request_messages: list[dict[str, Any]] = []
     
-    request_messages.append({"role": "system", "content": SYSTEM_PROMPT})
+    request_messages.append({"role": "system", "content": system_prompt})
     request_messages.extend(dict(message) for message in (context or []))
     if text is None:
         pass
     elif memories:
-        request_messages.append({"role": "user", "content": text + "\n".join(memories)})
+        request_messages.append({"role": "user", "content": text + "\n\nRetrieved context:\n" + "\n".join(memories)})
     else:
         request_messages.append({"role": "user", "content": text})
 
@@ -46,7 +51,7 @@ def send_to_coder(
             "Content-Type": "application/json",
         },
         json={
-            "model": os.getenv("OPENROUTER_MODEL"),
+            "model": model or os.getenv("OPENROUTER_MODEL") or DEFAULT_MODEL,
             "messages": request_messages,
             "tools": list_tools(),
             "reasoning": {"enabled": True},
@@ -54,7 +59,7 @@ def send_to_coder(
         timeout=timeout,
     )
 
-    model_response = response.json()["choices"][0]
+    response.raise_for_status()
     assistant_message = model_response["message"]
     finish_reason = model_response.get("finish_reason")
     response_type, response_value = response_passer(
