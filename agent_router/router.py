@@ -1,7 +1,7 @@
 from agent_roles.coder import send_to_coder
 from agent_roles.executor import send_to_executor
 from agent_roles.planner import send_to_planner
-from agent_roles.reviewer import send_to_reviewer
+from agent_roles.reviewer import run_reviewer_agent
 
 
 def agent_router(text, agent, route, context, memories):
@@ -13,6 +13,13 @@ def agent_router(text, agent, route, context, memories):
                 context=context,
                 memories=memories,
             )
+
+    if agent == "reviewer":
+        response = run_reviewer_agent(
+            text,
+            context=context,
+            memories=memories
+        )
 
     else: None
     return response 
