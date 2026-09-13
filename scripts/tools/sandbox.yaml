@@ -14,11 +14,11 @@ spec:
     - name: sandbox
       image: ${SANDBOX_IMAGE}
       imagePullPolicy: IfNotPresent
-      command: ["sleep", "infinity"]
-      workingDir: /home/user/project
+      command: ["sh", "-c", "mkdir -p /home/user/project && exec sleep infinity"]
+      workingDir: /home/user
       volumeMounts:
         - name: workspace
-          mountPath: /home/user/project
+          mountPath: /home/user
       resources:
         limits:
           cpu: "1"

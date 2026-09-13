@@ -60,6 +60,8 @@ def send_to_coder(
     )
 
     response.raise_for_status()
+    payload = response.json()
+    model_response = payload["choices"][0]
     assistant_message = model_response["message"]
     finish_reason = model_response.get("finish_reason")
     response_type, response_value = response_passer(
