@@ -1,8 +1,12 @@
+import os
+from pathlib import Path
+
 from memory import MemoryStore, get_relevant_memories
 
 
 def main() -> None:
     memory_store = MemoryStore()
+    project_id = os.getenv("MEMORY_PROJECT_ID") or Path.cwd().resolve().name
     context = []
 
     print("Type 'exit' or 'quit' to stop.")
@@ -23,7 +27,12 @@ def main() -> None:
         if text.startswith("/remember "):
             memory_text = text.removeprefix("/remember ").strip()
             try:
-                record = memory_store.add(memory_text)
+                record = memory_store.add(
+                    memory_text,
+                    project_id=project_id,
+                    source_type="user",
+                    reliability=1.0,
+                )
             except ValueError as error:
                 print(f"\nMemory: {error}")
             else:
@@ -31,7 +40,7 @@ def main() -> None:
             continue
 
         if text == "/memories":
-            records = memory_store.list_all()
+            records = memory_store.list_all(project_id=project_id)
             if not records:
                 print("\nMemory: no saved memories")
             for record in records:
@@ -48,7 +57,12 @@ def main() -> None:
                 print(f"\nMemory: #{memory_id} was not found")
             continue
 
-        relevant_memories = get_relevant_memories(text, store=memory_store)
+        relevant_memories = get_relevant_memories(
+            text,
+            store=memory_store,
+            project_id=project_id,
+            max_tokens=500,
+        )
 
         # Keep memory-only commands usable before optional API dependencies are loaded.
         from agent_roles import send_to_coder
