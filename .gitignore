@@ -2,3 +2,6 @@
 __pycache__/
 *.py[cod]
 .DS_Store
+.venv/
+sandbox-output/
+tests/test_sandbox.py
