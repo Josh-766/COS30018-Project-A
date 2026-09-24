@@ -6,3 +6,6 @@ __pycache__/
 memory/*.db
 memory/*.db-shm
 memory/*.db-wal
+.venv/
+sandbox-output/
+tests/test_sandbox.py

@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ${POD_NAME}
+spec:
+  restartPolicy: Never
+  activeDeadlineSeconds: 7200
+  automountServiceAccountToken: false
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+  containers:
+    - name: sandbox
+      image: ${SANDBOX_IMAGE}
+      imagePullPolicy: IfNotPresent
+      command: ["sh", "-c", "mkdir -p /home/user/project && exec sleep infinity"]
+      workingDir: /home/user
+      volumeMounts:
+        - name: workspace
+          mountPath: /home/user
+      resources:
+        limits:
+          cpu: "1"
+          memory: 1Gi
+      securityContext:
+        runAsNonRoot: true
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
+  volumes:
+    - name: workspace
+      emptyDir: {}

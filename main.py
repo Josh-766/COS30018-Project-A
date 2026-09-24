@@ -2,6 +2,12 @@ import os
 from pathlib import Path
 
 from memory import MemoryStore, get_relevant_memories
+from pathlib import Path
+
+from agent_roles import send_to_coder
+from memory import get_relevant_memories
+from scripts.tools.tool_registry import execute_tool
+from scripts.tools.sandbox_setup import create_session
 
 
 def main() -> None:
@@ -17,7 +23,7 @@ def main() -> None:
             text = input("\nYou: ").strip()
         except (EOFError, KeyboardInterrupt):
             break
-
+            
         if not text:
             continue
 
@@ -64,17 +70,49 @@ def main() -> None:
             max_tokens=500,
         )
 
-        # Keep memory-only commands usable before optional API dependencies are loaded.
-        from agent_roles import send_to_coder
+    sandbox = create_session(Path.cwd())
+    try:
+        while True:
+            try:
+                text = input("\nYou: ").strip()
+            except (EOFError, KeyboardInterrupt):
+                break
 
-        result = send_to_coder(
-            text,
-            context=context,
-            memories=relevant_memories,
-        )
+            if text.lower() in ("exit", "quit"):
+                break
 
-        context = result["context"]
-        print(f"\nCoder: {result['text']}")
+            if not text:
+                continue
+
+            relevant_memories = get_relevant_memories(text, memories)
+
+
+            result = send_to_coder(
+                text,
+                context=context,
+                memories=relevant_memories,
+            )
+
+            
+            while result["has_tool_call"]:
+                context = result["context"]
+
+                for tool_call in result["tool_calls"]:
+                    print(f"\nRunning tool: {tool_call['function']['name']}")
+                    output = execute_tool(tool_call, sandbox=sandbox)
+                    print(output)
+                    context.append({
+                        "role": "tool",
+                        "tool_call_id": tool_call["id"],
+                        "content": output,
+                    })
+
+                result = send_to_coder(None, context=context)
+
+            context = result["context"]
+            print(f"\nCoder: {result['text']}")
+    finally:
+        sandbox.terminate()
 
 
 if __name__ == "__main__":
