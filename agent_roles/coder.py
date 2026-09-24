@@ -36,12 +36,18 @@ def send_to_coder(
     
     request_messages.append({"role": "system", "content": system_prompt})
     request_messages.extend(dict(message) for message in (context or []))
-    if text is None:
-        pass
-    elif memories:
-        request_messages.append({"role": "user", "content": text + "\n\nRetrieved context:\n" + "\n".join(memories)})
+    if memories:
+        memory_context = "\n".join(f"- {memory}" for memory in memories)
+        user_content = (
+            "Retrieved project memory:\n"
+            "<memory>\n"
+            f"{memory_context}\n"
+            "</memory>\n\n"
+            f"Current request:\n{text}"
+        )
     else:
-        request_messages.append({"role": "user", "content": text})
+        user_content = text
+    request_messages.append({"role": "user", "content": user_content})
 
         
     response = requests.post(
