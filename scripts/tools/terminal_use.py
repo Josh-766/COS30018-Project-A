@@ -1,6 +1,7 @@
 """Execute commands only in the session's Linux sandbox."""
 import shlex
 from types import SimpleNamespace
+from memory.privacy import redact_sensitive_text
 
 WORKSPACE = '/home/user/project'
 OUTPUT_LIMIT = 16000
@@ -37,6 +38,16 @@ def run_command(command, sandbox, timeout=60):
 def execute_command(arguments, sandbox):
     script = 'cd ' + WORKSPACE + ' && ' + arguments['command']
     result = run_command('timeout --kill-after=5s 30s sh -c ' + shlex.quote(script), sandbox)
-    return {'stdout': result.stdout[:OUTPUT_LIMIT], 'stderr': result.stderr[:OUTPUT_LIMIT],
+    # Detect complete literals/PEM blocks before clipping their identifying prefix.
+    stdout, stderr = redact_sensitive_text(result.stdout), redact_sensitive_text(result.stderr)
+    def bounded(stream):
+        if len(stream) <= OUTPUT_LIMIT:
+            return stream
+        marker = '\n...[output omitted]...\n'
+        head = (OUTPUT_LIMIT - len(marker)) // 2
+        tail = OUTPUT_LIMIT - len(marker) - head
+        return stream[:head] + marker + stream[-tail:]
+    return {'stdout': bounded(stdout), 'stderr': bounded(stderr),
             'exit_code': result.exit_code, 'timed_out': result.exit_code in (124, 137),
-            'truncated': len(result.stdout) > OUTPUT_LIMIT or len(result.stderr) > OUTPUT_LIMIT}
+            'truncated': len(stdout) > OUTPUT_LIMIT or len(stderr) > OUTPUT_LIMIT,
+            'redacted': stdout != result.stdout or stderr != result.stderr}

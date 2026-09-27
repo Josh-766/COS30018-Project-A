@@ -1,0 +1,3330 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-27T14:17:57.415926+00:00",
+  "fixture": "/Users/lisaho/Developer/COS30018-Project-A/tests/fixtures/memory_retrieval.json",
+  "fixture_title": "Hand-labeled coding-agent memory retrieval development benchmark",
+  "fixture_sha256": "da6b785f19fdb2bac35a12a905afad376456c648c7e7bd09bbcfe6c76c490313",
+  "environment": {
+    "python": "3.14.4",
+    "sqlite": "3.53.0",
+    "platform": "Darwin",
+    "architecture": "arm64"
+  },
+  "configuration": {
+    "top_k": 3,
+    "estimated_token_budget": 1200,
+    "timing_repeats": 3,
+    "timing": "median of warm runs per query",
+    "token_estimator": "ceil(UTF-8 bytes / 3); heuristic, not billed model tokens"
+  },
+  "dataset": {
+    "memories": 33,
+    "queries": 40,
+    "difficulties": {
+      "simple": 12,
+      "moderate": 18,
+      "difficult": 10
+    },
+    "synthetic": true,
+    "held_out": false,
+    "end_to_end": false
+  },
+  "limitations": [
+    "Development retrieval benchmark; not unseen or end-to-end coding-task evaluation.",
+    "Recent-record baseline is a safe scope-filtered context-selection proxy, not real raw conversation history.",
+    "Precision, recall and MRR use answerable queries only; no-answer accuracy is reported separately.",
+    "No LLM answer quality, task success, iteration counts, recovery rate, or paid token costs are measured.",
+    "Latency excludes startup, embedding model loading and LLM calls; small synthetic corpus stays warm.",
+    "No semantic embedding provider was evaluated in this offline run."
+  ],
+  "methods": {
+    "no_memory": {
+      "summary": {
+        "queries": 40,
+        "answerable_queries": 29,
+        "no_answer_queries": 11,
+        "macro_precision_returned": 0.0,
+        "macro_precision_at_k": 0.0,
+        "macro_recall_at_k": 0.0,
+        "mrr_at_k": 0.0,
+        "exact_set_accuracy": 0.275,
+        "no_answer_accuracy": 1,
+        "forbidden_hit_count": 0,
+        "queries_with_forbidden_hits": 0,
+        "mean_latency_ms": 0.000101,
+        "p95_latency_ms": 0.000125,
+        "mean_estimated_context_tokens": 0,
+        "max_estimated_context_tokens": 0
+      },
+      "by_difficulty": {
+        "difficult": {
+          "queries": 10,
+          "answerable_queries": 4,
+          "no_answer_queries": 6,
+          "macro_precision_returned": 0.0,
+          "macro_precision_at_k": 0.0,
+          "macro_recall_at_k": 0.0,
+          "mrr_at_k": 0.0,
+          "exact_set_accuracy": 0.6,
+          "no_answer_accuracy": 1,
+          "forbidden_hit_count": 0,
+          "queries_with_forbidden_hits": 0,
+          "mean_latency_ms": 8.7e-05,
+          "p95_latency_ms": 0.000125,
+          "mean_estimated_context_tokens": 0,
+          "max_estimated_context_tokens": 0
+        },
+        "moderate": {
+          "queries": 18,
+          "answerable_queries": 14,
+          "no_answer_queries": 4,
+          "macro_precision_returned": 0.0,
+          "macro_precision_at_k": 0.0,
+          "macro_recall_at_k": 0.0,
+          "mrr_at_k": 0.0,
+          "exact_set_accuracy": 0.222222,
+          "no_answer_accuracy": 1,
+          "forbidden_hit_count": 0,
+          "queries_with_forbidden_hits": 0,
+          "mean_latency_ms": 9.2e-05,
+          "p95_latency_ms": 0.000125,
+          "mean_estimated_context_tokens": 0,
+          "max_estimated_context_tokens": 0
+        },
+        "simple": {
+          "queries": 12,
+          "answerable_queries": 11,
+          "no_answer_queries": 1,
+          "macro_precision_returned": 0.0,
+          "macro_precision_at_k": 0.0,
+          "macro_recall_at_k": 0.0,
+          "mrr_at_k": 0.0,
+          "exact_set_accuracy": 0.083333,
+          "no_answer_accuracy": 1,
+          "forbidden_hit_count": 0,
+          "queries_with_forbidden_hits": 0,
+          "mean_latency_ms": 0.000125,
+          "p95_latency_ms": 0.0005,
+          "mean_estimated_context_tokens": 0,
+          "max_estimated_context_tokens": 0
+        }
+      },
+      "queries": [
+        {
+          "id": "q01",
+          "difficulty": "simple",
+          "category": "exact",
+          "query": "CPython 3.12 runtime target",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "python"
+          ],
+          "returned": [],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.0005,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q02",
+          "difficulty": "simple",
+          "category": "identifier",
+          "query": "FastAPI app/routes.py",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "framework"
+          ],
+          "returned": [],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.000125,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q03",
+          "difficulty": "simple",
+          "category": "exact",
+          "query": "SQLite FTS5 durable memory",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "storage"
+          ],
+          "returned": [],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 8.3e-05,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q04",
+          "difficulty": "simple",
+          "category": "exact",
+          "query": "Optional embeddings unavailable offline retrieval",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "embeddings"
+          ],
+          "returned": [],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 8.3e-05,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q05",
+          "difficulty": "moderate",
+          "category": "command",
+          "query": "Which command runs the regression suite?",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "tests"
+          ],
+          "returned": [],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 8.3e-05,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q06",
+          "difficulty": "simple",
+          "category": "exact",
+          "query": "Formatting indentation spaces tabs",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "formatting"
+          ],
+          "returned": [],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 8.4e-05,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q07",
+          "difficulty": "simple",
+          "category": "command",
+          "query": "ruff lint",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "lint"
+          ],
+          "returned": [],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.000125,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q08",
+          "difficulty": "simple",
+          "category": "identifier",
+          "query": "OAuth PKCE sign-in",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "auth"
+          ],
+          "returned": [],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 8.3e-05,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q09",
+          "difficulty": "simple",
+          "category": "error_code",
+          "query": "429 retry backoff",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "retry"
+          ],
+          "returned": [],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 8.3e-05,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q10",
+          "difficulty": "moderate",
+          "category": "natural_language",
+          "query": "How much terminal output is allowed in a prompt?",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "output"
+          ],
+          "returned": [],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 8.3e-05,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q11",
+          "difficulty": "simple",
+          "category": "exact",
+          "query": "sandbox outbound network",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "sandbox"
+          ],
+          "returned": [],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 8.4e-05,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q12",
+          "difficulty": "moderate",
+          "category": "multiple_relevant",
+          "query": "requirements.txt virtual environment install",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "packages",
+            "import_error"
+          ],
+          "returned": [],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.000125,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q13",
+          "difficulty": "moderate",
+          "category": "supersession",
+          "query": "OpenRouter request timeout",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "timeout_current"
+          ],
+          "returned": [],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.000125,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q14",
+          "difficulty": "moderate",
+          "category": "expiry",
+          "query": "9229 debugging endpoint",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [],
+          "returned": [],
+          "precision": null,
+          "precision_at_k": null,
+          "recall": null,
+          "reciprocal_rank": null,
+          "exact_set_match": true,
+          "correct_abstention": true,
+          "forbidden_returned": [],
+          "latency_ms": 8.3e-05,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q15",
+          "difficulty": "moderate",
+          "category": "disputed",
+          "query": "Redis 6379 cache",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [],
+          "returned": [],
+          "precision": null,
+          "precision_at_k": null,
+          "recall": null,
+          "reciprocal_rank": null,
+          "exact_set_match": true,
+          "correct_abstention": true,
+          "forbidden_returned": [],
+          "latency_ms": 8.3e-05,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q16",
+          "difficulty": "moderate",
+          "category": "deletion",
+          "query": "Zephyr comet",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [],
+          "returned": [],
+          "precision": null,
+          "precision_at_k": null,
+          "recall": null,
+          "reciprocal_rank": null,
+          "exact_set_match": true,
+          "correct_abstention": true,
+          "forbidden_returned": [],
+          "latency_ms": 8.3e-05,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q17",
+          "difficulty": "moderate",
+          "category": "project_isolation",
+          "query": "Mercury Kubernetes",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [],
+          "returned": [],
+          "precision": null,
+          "precision_at_k": null,
+          "recall": null,
+          "reciprocal_rank": null,
+          "exact_set_match": true,
+          "correct_abstention": true,
+          "forbidden_returned": [],
+          "latency_ms": 8.3e-05,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q18",
+          "difficulty": "moderate",
+          "category": "user_isolation",
+          "query": "editor theme colours",
+          "scope": {
+            "project_id": "evaluation",
+            "user_id": "alice"
+          },
+          "expected": [
+            "alice"
+          ],
+          "returned": [],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.000125,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q19",
+          "difficulty": "moderate",
+          "category": "user_isolation",
+          "query": "editor theme colours",
+          "scope": {
+            "project_id": "evaluation",
+            "user_id": "bob"
+          },
+          "expected": [
+            "bob"
+          ],
+          "returned": [],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 8.3e-05,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q20",
+          "difficulty": "difficult",
+          "category": "omitted_user_scope",
+          "query": "editor theme colours",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [],
+          "returned": [],
+          "precision": null,
+          "precision_at_k": null,
+          "recall": null,
+          "reciprocal_rank": null,
+          "exact_set_match": true,
+          "correct_abstention": true,
+          "forbidden_returned": [],
+          "latency_ms": 8.3e-05,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q21",
+          "difficulty": "moderate",
+          "category": "agent_scope",
+          "query": "invoice overflow",
+          "scope": {
+            "project_id": "evaluation",
+            "agent_id": "reviewer"
+          },
+          "expected": [
+            "reviewer_private"
+          ],
+          "returned": [],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 8.3e-05,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q22",
+          "difficulty": "difficult",
+          "category": "agent_isolation",
+          "query": "invoice overflow",
+          "scope": {
+            "project_id": "evaluation",
+            "agent_id": "coder"
+          },
+          "expected": [],
+          "returned": [],
+          "precision": null,
+          "precision_at_k": null,
+          "recall": null,
+          "reciprocal_rank": null,
+          "exact_set_match": true,
+          "correct_abstention": true,
+          "forbidden_returned": [],
+          "latency_ms": 8.3e-05,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q23",
+          "difficulty": "moderate",
+          "category": "session_scope",
+          "query": "atlas parser",
+          "scope": {
+            "project_id": "evaluation",
+            "session_id": "s1"
+          },
+          "expected": [
+            "session_private"
+          ],
+          "returned": [],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 8.3e-05,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q24",
+          "difficulty": "difficult",
+          "category": "session_isolation",
+          "query": "atlas parser",
+          "scope": {
+            "project_id": "evaluation",
+            "session_id": "s2"
+          },
+          "expected": [],
+          "returned": [],
+          "precision": null,
+          "precision_at_k": null,
+          "recall": null,
+          "reciprocal_rank": null,
+          "exact_set_match": true,
+          "correct_abstention": true,
+          "forbidden_returned": [],
+          "latency_ms": 8.3e-05,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q25",
+          "difficulty": "moderate",
+          "category": "task_scope",
+          "query": "nebula serializer",
+          "scope": {
+            "project_id": "evaluation",
+            "task_id": "t1"
+          },
+          "expected": [
+            "task_private"
+          ],
+          "returned": [],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 8.4e-05,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q26",
+          "difficulty": "difficult",
+          "category": "task_isolation",
+          "query": "nebula serializer",
+          "scope": {
+            "project_id": "evaluation",
+            "task_id": "t2"
+          },
+          "expected": [],
+          "returned": [],
+          "precision": null,
+          "precision_at_k": null,
+          "recall": null,
+          "reciprocal_rank": null,
+          "exact_set_match": true,
+          "correct_abstention": true,
+          "forbidden_returned": [],
+          "latency_ms": 8.3e-05,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q27",
+          "difficulty": "moderate",
+          "category": "global_scope",
+          "query": "credentials saved logs",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "global_credentials"
+          ],
+          "returned": [],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 8.3e-05,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q28",
+          "difficulty": "simple",
+          "category": "error_code",
+          "query": "ModuleNotFoundError requests",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "import_error"
+          ],
+          "returned": [],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 8.3e-05,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q29",
+          "difficulty": "simple",
+          "category": "error_code",
+          "query": "EADDRINUSE 8000",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "port_error"
+          ],
+          "returned": [],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 8.3e-05,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q30",
+          "difficulty": "moderate",
+          "category": "error_code",
+          "query": "TypeError naive timezone-aware datetime",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "datetime_fix"
+          ],
+          "returned": [],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 8.3e-05,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q31",
+          "difficulty": "moderate",
+          "category": "natural_language",
+          "query": "Why must replacing a fact be atomic?",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "transactions"
+          ],
+          "returned": [],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 8.3e-05,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q32",
+          "difficulty": "moderate",
+          "category": "natural_language",
+          "query": "Preserve tool results when compacting conversation history",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "tool_pairs"
+          ],
+          "returned": [],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 8.3e-05,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q33",
+          "difficulty": "difficult",
+          "category": "unverified",
+          "query": "GPU benchmark",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [],
+          "returned": [],
+          "precision": null,
+          "precision_at_k": null,
+          "recall": null,
+          "reciprocal_rank": null,
+          "exact_set_match": true,
+          "correct_abstention": true,
+          "forbidden_returned": [],
+          "latency_ms": 0.000125,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q34",
+          "difficulty": "difficult",
+          "category": "paraphrase",
+          "query": "How do people prove who they are?",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "auth"
+          ],
+          "returned": [],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 8.4e-05,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q35",
+          "difficulty": "difficult",
+          "category": "paraphrase",
+          "query": "Recall our choice for remembering things between launches",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "storage"
+          ],
+          "returned": [],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 8.4e-05,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q36",
+          "difficulty": "difficult",
+          "category": "paraphrase",
+          "query": "What prevents endless attempts after throttling?",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "retry"
+          ],
+          "returned": [],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 8.3e-05,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q37",
+          "difficulty": "difficult",
+          "category": "paraphrase",
+          "query": "How do we keep wall clock representations comparable?",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "datetime_fix"
+          ],
+          "returned": [],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 8.3e-05,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q38",
+          "difficulty": "simple",
+          "category": "no_match",
+          "query": "zebrafish aquarium salinity",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [],
+          "returned": [],
+          "precision": null,
+          "precision_at_k": null,
+          "recall": null,
+          "reciprocal_rank": null,
+          "exact_set_match": true,
+          "correct_abstention": true,
+          "forbidden_returned": [],
+          "latency_ms": 8.4e-05,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q39",
+          "difficulty": "moderate",
+          "category": "recent_episode",
+          "query": "toolbar icon alignment",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "recent_icon"
+          ],
+          "returned": [],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.000125,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q40",
+          "difficulty": "difficult",
+          "category": "scope_disabled_global",
+          "query": "credentials logs",
+          "scope": {
+            "project_id": "evaluation",
+            "include_global": false
+          },
+          "expected": [],
+          "returned": [],
+          "precision": null,
+          "precision_at_k": null,
+          "recall": null,
+          "reciprocal_rank": null,
+          "exact_set_match": true,
+          "correct_abstention": true,
+          "forbidden_returned": [],
+          "latency_ms": 8.4e-05,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        }
+      ]
+    },
+    "recent_records_proxy": {
+      "summary": {
+        "queries": 40,
+        "answerable_queries": 29,
+        "no_answer_queries": 11,
+        "macro_precision_returned": 0.011494,
+        "macro_precision_at_k": 0.011494,
+        "macro_recall_at_k": 0.034483,
+        "mrr_at_k": 0.017241,
+        "exact_set_accuracy": 0,
+        "no_answer_accuracy": 0,
+        "forbidden_hit_count": 0,
+        "queries_with_forbidden_hits": 0,
+        "mean_latency_ms": 0.022285,
+        "p95_latency_ms": 0.0235,
+        "mean_estimated_context_tokens": 156,
+        "max_estimated_context_tokens": 156
+      },
+      "by_difficulty": {
+        "difficult": {
+          "queries": 10,
+          "answerable_queries": 4,
+          "no_answer_queries": 6,
+          "macro_precision_returned": 0.0,
+          "macro_precision_at_k": 0.0,
+          "macro_recall_at_k": 0.0,
+          "mrr_at_k": 0.0,
+          "exact_set_accuracy": 0,
+          "no_answer_accuracy": 0,
+          "forbidden_hit_count": 0,
+          "queries_with_forbidden_hits": 0,
+          "mean_latency_ms": 0.022287,
+          "p95_latency_ms": 0.023333,
+          "mean_estimated_context_tokens": 156,
+          "max_estimated_context_tokens": 156
+        },
+        "moderate": {
+          "queries": 18,
+          "answerable_queries": 14,
+          "no_answer_queries": 4,
+          "macro_precision_returned": 0.02381,
+          "macro_precision_at_k": 0.02381,
+          "macro_recall_at_k": 0.071429,
+          "mrr_at_k": 0.035714,
+          "exact_set_accuracy": 0,
+          "no_answer_accuracy": 0,
+          "forbidden_hit_count": 0,
+          "queries_with_forbidden_hits": 0,
+          "mean_latency_ms": 0.022394,
+          "p95_latency_ms": 0.023584,
+          "mean_estimated_context_tokens": 156,
+          "max_estimated_context_tokens": 156
+        },
+        "simple": {
+          "queries": 12,
+          "answerable_queries": 11,
+          "no_answer_queries": 1,
+          "macro_precision_returned": 0.0,
+          "macro_precision_at_k": 0.0,
+          "macro_recall_at_k": 0.0,
+          "mrr_at_k": 0.0,
+          "exact_set_accuracy": 0,
+          "no_answer_accuracy": 0,
+          "forbidden_hit_count": 0,
+          "queries_with_forbidden_hits": 0,
+          "mean_latency_ms": 0.022121,
+          "p95_latency_ms": 0.023,
+          "mean_estimated_context_tokens": 156,
+          "max_estimated_context_tokens": 156
+        }
+      },
+      "queries": [
+        {
+          "id": "q01",
+          "difficulty": "simple",
+          "category": "exact",
+          "query": "CPython 3.12 runtime target",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "python"
+          ],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.023,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q02",
+          "difficulty": "simple",
+          "category": "identifier",
+          "query": "FastAPI app/routes.py",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "framework"
+          ],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.022166,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q03",
+          "difficulty": "simple",
+          "category": "exact",
+          "query": "SQLite FTS5 durable memory",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "storage"
+          ],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.022291,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q04",
+          "difficulty": "simple",
+          "category": "exact",
+          "query": "Optional embeddings unavailable offline retrieval",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "embeddings"
+          ],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.022209,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q05",
+          "difficulty": "moderate",
+          "category": "command",
+          "query": "Which command runs the regression suite?",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "tests"
+          ],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.022125,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q06",
+          "difficulty": "simple",
+          "category": "exact",
+          "query": "Formatting indentation spaces tabs",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "formatting"
+          ],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.022,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q07",
+          "difficulty": "simple",
+          "category": "command",
+          "query": "ruff lint",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "lint"
+          ],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.022,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q08",
+          "difficulty": "simple",
+          "category": "identifier",
+          "query": "OAuth PKCE sign-in",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "auth"
+          ],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.021875,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q09",
+          "difficulty": "simple",
+          "category": "error_code",
+          "query": "429 retry backoff",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "retry"
+          ],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.022083,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q10",
+          "difficulty": "moderate",
+          "category": "natural_language",
+          "query": "How much terminal output is allowed in a prompt?",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "output"
+          ],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.021917,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q11",
+          "difficulty": "simple",
+          "category": "exact",
+          "query": "sandbox outbound network",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "sandbox"
+          ],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.022041,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q12",
+          "difficulty": "moderate",
+          "category": "multiple_relevant",
+          "query": "requirements.txt virtual environment install",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "packages",
+            "import_error"
+          ],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.021958,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q13",
+          "difficulty": "moderate",
+          "category": "supersession",
+          "query": "OpenRouter request timeout",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "timeout_current"
+          ],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.022041,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q14",
+          "difficulty": "moderate",
+          "category": "expiry",
+          "query": "9229 debugging endpoint",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": null,
+          "precision_at_k": null,
+          "recall": null,
+          "reciprocal_rank": null,
+          "exact_set_match": false,
+          "correct_abstention": false,
+          "forbidden_returned": [],
+          "latency_ms": 0.022792,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q15",
+          "difficulty": "moderate",
+          "category": "disputed",
+          "query": "Redis 6379 cache",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": null,
+          "precision_at_k": null,
+          "recall": null,
+          "reciprocal_rank": null,
+          "exact_set_match": false,
+          "correct_abstention": false,
+          "forbidden_returned": [],
+          "latency_ms": 0.022083,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q16",
+          "difficulty": "moderate",
+          "category": "deletion",
+          "query": "Zephyr comet",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": null,
+          "precision_at_k": null,
+          "recall": null,
+          "reciprocal_rank": null,
+          "exact_set_match": false,
+          "correct_abstention": false,
+          "forbidden_returned": [],
+          "latency_ms": 0.021958,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q17",
+          "difficulty": "moderate",
+          "category": "project_isolation",
+          "query": "Mercury Kubernetes",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": null,
+          "precision_at_k": null,
+          "recall": null,
+          "reciprocal_rank": null,
+          "exact_set_match": false,
+          "correct_abstention": false,
+          "forbidden_returned": [],
+          "latency_ms": 0.021916,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q18",
+          "difficulty": "moderate",
+          "category": "user_isolation",
+          "query": "editor theme colours",
+          "scope": {
+            "project_id": "evaluation",
+            "user_id": "alice"
+          },
+          "expected": [
+            "alice"
+          ],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.023584,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q19",
+          "difficulty": "moderate",
+          "category": "user_isolation",
+          "query": "editor theme colours",
+          "scope": {
+            "project_id": "evaluation",
+            "user_id": "bob"
+          },
+          "expected": [
+            "bob"
+          ],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.0235,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q20",
+          "difficulty": "difficult",
+          "category": "omitted_user_scope",
+          "query": "editor theme colours",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": null,
+          "precision_at_k": null,
+          "recall": null,
+          "reciprocal_rank": null,
+          "exact_set_match": false,
+          "correct_abstention": false,
+          "forbidden_returned": [],
+          "latency_ms": 0.021958,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q21",
+          "difficulty": "moderate",
+          "category": "agent_scope",
+          "query": "invoice overflow",
+          "scope": {
+            "project_id": "evaluation",
+            "agent_id": "reviewer"
+          },
+          "expected": [
+            "reviewer_private"
+          ],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.022916,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q22",
+          "difficulty": "difficult",
+          "category": "agent_isolation",
+          "query": "invoice overflow",
+          "scope": {
+            "project_id": "evaluation",
+            "agent_id": "coder"
+          },
+          "expected": [],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": null,
+          "precision_at_k": null,
+          "recall": null,
+          "reciprocal_rank": null,
+          "exact_set_match": false,
+          "correct_abstention": false,
+          "forbidden_returned": [],
+          "latency_ms": 0.022875,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q23",
+          "difficulty": "moderate",
+          "category": "session_scope",
+          "query": "atlas parser",
+          "scope": {
+            "project_id": "evaluation",
+            "session_id": "s1"
+          },
+          "expected": [
+            "session_private"
+          ],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.023542,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q24",
+          "difficulty": "difficult",
+          "category": "session_isolation",
+          "query": "atlas parser",
+          "scope": {
+            "project_id": "evaluation",
+            "session_id": "s2"
+          },
+          "expected": [],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": null,
+          "precision_at_k": null,
+          "recall": null,
+          "reciprocal_rank": null,
+          "exact_set_match": false,
+          "correct_abstention": false,
+          "forbidden_returned": [],
+          "latency_ms": 0.023333,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q25",
+          "difficulty": "moderate",
+          "category": "task_scope",
+          "query": "nebula serializer",
+          "scope": {
+            "project_id": "evaluation",
+            "task_id": "t1"
+          },
+          "expected": [
+            "task_private"
+          ],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.023209,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q26",
+          "difficulty": "difficult",
+          "category": "task_isolation",
+          "query": "nebula serializer",
+          "scope": {
+            "project_id": "evaluation",
+            "task_id": "t2"
+          },
+          "expected": [],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": null,
+          "precision_at_k": null,
+          "recall": null,
+          "reciprocal_rank": null,
+          "exact_set_match": false,
+          "correct_abstention": false,
+          "forbidden_returned": [],
+          "latency_ms": 0.022958,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q27",
+          "difficulty": "moderate",
+          "category": "global_scope",
+          "query": "credentials saved logs",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "global_credentials"
+          ],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.021917,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q28",
+          "difficulty": "simple",
+          "category": "error_code",
+          "query": "ModuleNotFoundError requests",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "import_error"
+          ],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.021917,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q29",
+          "difficulty": "simple",
+          "category": "error_code",
+          "query": "EADDRINUSE 8000",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "port_error"
+          ],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.022,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q30",
+          "difficulty": "moderate",
+          "category": "error_code",
+          "query": "TypeError naive timezone-aware datetime",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "datetime_fix"
+          ],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.021792,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q31",
+          "difficulty": "moderate",
+          "category": "natural_language",
+          "query": "Why must replacing a fact be atomic?",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "transactions"
+          ],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.021917,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q32",
+          "difficulty": "moderate",
+          "category": "natural_language",
+          "query": "Preserve tool results when compacting conversation history",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "tool_pairs"
+          ],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.021833,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q33",
+          "difficulty": "difficult",
+          "category": "unverified",
+          "query": "GPU benchmark",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": null,
+          "precision_at_k": null,
+          "recall": null,
+          "reciprocal_rank": null,
+          "exact_set_match": false,
+          "correct_abstention": false,
+          "forbidden_returned": [],
+          "latency_ms": 0.021958,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q34",
+          "difficulty": "difficult",
+          "category": "paraphrase",
+          "query": "How do people prove who they are?",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "auth"
+          ],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.021917,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q35",
+          "difficulty": "difficult",
+          "category": "paraphrase",
+          "query": "Recall our choice for remembering things between launches",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "storage"
+          ],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.021958,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q36",
+          "difficulty": "difficult",
+          "category": "paraphrase",
+          "query": "What prevents endless attempts after throttling?",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "retry"
+          ],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.021917,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q37",
+          "difficulty": "difficult",
+          "category": "paraphrase",
+          "query": "How do we keep wall clock representations comparable?",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "datetime_fix"
+          ],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.022083,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q38",
+          "difficulty": "simple",
+          "category": "no_match",
+          "query": "zebrafish aquarium salinity",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": null,
+          "precision_at_k": null,
+          "recall": null,
+          "reciprocal_rank": null,
+          "exact_set_match": false,
+          "correct_abstention": false,
+          "forbidden_returned": [],
+          "latency_ms": 0.021875,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q39",
+          "difficulty": "moderate",
+          "category": "recent_episode",
+          "query": "toolbar icon alignment",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "recent_icon"
+          ],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": 0.3333333333333333,
+          "precision_at_k": 0.3333333333333333,
+          "recall": 1.0,
+          "reciprocal_rank": 0.5,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.022083,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q40",
+          "difficulty": "difficult",
+          "category": "scope_disabled_global",
+          "query": "credentials logs",
+          "scope": {
+            "project_id": "evaluation",
+            "include_global": false
+          },
+          "expected": [],
+          "returned": [
+            "recent_license",
+            "recent_icon",
+            "recent_readme"
+          ],
+          "precision": null,
+          "precision_at_k": null,
+          "recall": null,
+          "reciprocal_rank": null,
+          "exact_set_match": false,
+          "correct_abstention": false,
+          "forbidden_returned": [],
+          "latency_ms": 0.021917,
+          "estimated_context_tokens": 156,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        }
+      ]
+    },
+    "scoped_fts5": {
+      "summary": {
+        "queries": 40,
+        "answerable_queries": 29,
+        "no_answer_queries": 11,
+        "macro_precision_returned": 0.804598,
+        "macro_precision_at_k": 0.310345,
+        "macro_recall_at_k": 0.896552,
+        "mrr_at_k": 0.896552,
+        "exact_set_accuracy": 0.775,
+        "no_answer_accuracy": 0.909091,
+        "forbidden_hit_count": 0,
+        "queries_with_forbidden_hits": 0,
+        "mean_latency_ms": 1.567807,
+        "p95_latency_ms": 2.664709,
+        "mean_estimated_context_tokens": 52.5,
+        "max_estimated_context_tokens": 200
+      },
+      "by_difficulty": {
+        "difficult": {
+          "queries": 10,
+          "answerable_queries": 4,
+          "no_answer_queries": 6,
+          "macro_precision_returned": 0.25,
+          "macro_precision_at_k": 0.083333,
+          "macro_recall_at_k": 0.25,
+          "mrr_at_k": 0.25,
+          "exact_set_accuracy": 0.6,
+          "no_answer_accuracy": 0.833333,
+          "forbidden_hit_count": 0,
+          "queries_with_forbidden_hits": 0,
+          "mean_latency_ms": 1.143383,
+          "p95_latency_ms": 2.04775,
+          "mean_estimated_context_tokens": 12.7,
+          "max_estimated_context_tokens": 67
+        },
+        "moderate": {
+          "queries": 18,
+          "answerable_queries": 14,
+          "no_answer_queries": 4,
+          "macro_precision_returned": 0.857143,
+          "macro_precision_at_k": 0.357143,
+          "macro_recall_at_k": 1.0,
+          "mrr_at_k": 1.0,
+          "exact_set_accuracy": 0.777778,
+          "no_answer_accuracy": 1,
+          "forbidden_hit_count": 0,
+          "queries_with_forbidden_hits": 0,
+          "mean_latency_ms": 1.675308,
+          "p95_latency_ms": 3.129875,
+          "mean_estimated_context_tokens": 65.944444,
+          "max_estimated_context_tokens": 200
+        },
+        "simple": {
+          "queries": 12,
+          "answerable_queries": 11,
+          "no_answer_queries": 1,
+          "macro_precision_returned": 0.939394,
+          "macro_precision_at_k": 0.333333,
+          "macro_recall_at_k": 1.0,
+          "mrr_at_k": 1.0,
+          "exact_set_accuracy": 0.916667,
+          "no_answer_accuracy": 1,
+          "forbidden_hit_count": 0,
+          "queries_with_forbidden_hits": 0,
+          "mean_latency_ms": 1.760243,
+          "p95_latency_ms": 2.693458,
+          "mean_estimated_context_tokens": 65.5,
+          "max_estimated_context_tokens": 168
+        }
+      },
+      "queries": [
+        {
+          "id": "q01",
+          "difficulty": "simple",
+          "category": "exact",
+          "query": "CPython 3.12 runtime target",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "python"
+          ],
+          "returned": [
+            "python"
+          ],
+          "precision": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_set_match": true,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 1.505792,
+          "estimated_context_tokens": 61,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q02",
+          "difficulty": "simple",
+          "category": "identifier",
+          "query": "FastAPI app/routes.py",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "framework"
+          ],
+          "returned": [
+            "framework"
+          ],
+          "precision": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_set_match": true,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 1.379125,
+          "estimated_context_tokens": 52,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q03",
+          "difficulty": "simple",
+          "category": "exact",
+          "query": "SQLite FTS5 durable memory",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "storage"
+          ],
+          "returned": [
+            "storage",
+            "lint",
+            "global_credentials"
+          ],
+          "precision": 0.3333333333333333,
+          "precision_at_k": 0.3333333333333333,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 1.891416,
+          "estimated_context_tokens": 168,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q04",
+          "difficulty": "simple",
+          "category": "exact",
+          "query": "Optional embeddings unavailable offline retrieval",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "embeddings"
+          ],
+          "returned": [
+            "embeddings"
+          ],
+          "precision": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_set_match": true,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 2.034125,
+          "estimated_context_tokens": 71,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q05",
+          "difficulty": "moderate",
+          "category": "command",
+          "query": "Which command runs the regression suite?",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "tests"
+          ],
+          "returned": [
+            "tests",
+            "lint"
+          ],
+          "precision": 0.5,
+          "precision_at_k": 0.3333333333333333,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 1.78675,
+          "estimated_context_tokens": 100,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q06",
+          "difficulty": "simple",
+          "category": "exact",
+          "query": "Formatting indentation spaces tabs",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "formatting"
+          ],
+          "returned": [
+            "formatting"
+          ],
+          "precision": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_set_match": true,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 1.674292,
+          "estimated_context_tokens": 62,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q07",
+          "difficulty": "simple",
+          "category": "command",
+          "query": "ruff lint",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "lint"
+          ],
+          "returned": [
+            "lint"
+          ],
+          "precision": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_set_match": true,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 1.92875,
+          "estimated_context_tokens": 48,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q08",
+          "difficulty": "simple",
+          "category": "identifier",
+          "query": "OAuth PKCE sign-in",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "auth"
+          ],
+          "returned": [
+            "auth"
+          ],
+          "precision": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_set_match": true,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 1.818709,
+          "estimated_context_tokens": 61,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q09",
+          "difficulty": "simple",
+          "category": "error_code",
+          "query": "429 retry backoff",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "retry"
+          ],
+          "returned": [
+            "retry"
+          ],
+          "precision": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_set_match": true,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 1.755958,
+          "estimated_context_tokens": 60,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q10",
+          "difficulty": "moderate",
+          "category": "natural_language",
+          "query": "How much terminal output is allowed in a prompt?",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "output"
+          ],
+          "returned": [
+            "output"
+          ],
+          "precision": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_set_match": true,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 1.70625,
+          "estimated_context_tokens": 67,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q11",
+          "difficulty": "simple",
+          "category": "exact",
+          "query": "sandbox outbound network",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "sandbox"
+          ],
+          "returned": [
+            "sandbox"
+          ],
+          "precision": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_set_match": true,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 1.517958,
+          "estimated_context_tokens": 65,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q12",
+          "difficulty": "moderate",
+          "category": "multiple_relevant",
+          "query": "requirements.txt virtual environment install",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "packages",
+            "import_error"
+          ],
+          "returned": [
+            "packages",
+            "import_error",
+            "sandbox"
+          ],
+          "precision": 0.6666666666666666,
+          "precision_at_k": 0.6666666666666666,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 1.684708,
+          "estimated_context_tokens": 200,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q13",
+          "difficulty": "moderate",
+          "category": "supersession",
+          "query": "OpenRouter request timeout",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "timeout_current"
+          ],
+          "returned": [
+            "timeout_current"
+          ],
+          "precision": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_set_match": true,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 1.880125,
+          "estimated_context_tokens": 46,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q14",
+          "difficulty": "moderate",
+          "category": "expiry",
+          "query": "9229 debugging endpoint",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [],
+          "returned": [],
+          "precision": null,
+          "precision_at_k": null,
+          "recall": null,
+          "reciprocal_rank": null,
+          "exact_set_match": true,
+          "correct_abstention": true,
+          "forbidden_returned": [],
+          "latency_ms": 0.787792,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q15",
+          "difficulty": "moderate",
+          "category": "disputed",
+          "query": "Redis 6379 cache",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [],
+          "returned": [],
+          "precision": null,
+          "precision_at_k": null,
+          "recall": null,
+          "reciprocal_rank": null,
+          "exact_set_match": true,
+          "correct_abstention": true,
+          "forbidden_returned": [],
+          "latency_ms": 0.786417,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q16",
+          "difficulty": "moderate",
+          "category": "deletion",
+          "query": "Zephyr comet",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [],
+          "returned": [],
+          "precision": null,
+          "precision_at_k": null,
+          "recall": null,
+          "reciprocal_rank": null,
+          "exact_set_match": true,
+          "correct_abstention": true,
+          "forbidden_returned": [],
+          "latency_ms": 0.850209,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q17",
+          "difficulty": "moderate",
+          "category": "project_isolation",
+          "query": "Mercury Kubernetes",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [],
+          "returned": [],
+          "precision": null,
+          "precision_at_k": null,
+          "recall": null,
+          "reciprocal_rank": null,
+          "exact_set_match": true,
+          "correct_abstention": true,
+          "forbidden_returned": [],
+          "latency_ms": 0.8185,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q18",
+          "difficulty": "moderate",
+          "category": "user_isolation",
+          "query": "editor theme colours",
+          "scope": {
+            "project_id": "evaluation",
+            "user_id": "alice"
+          },
+          "expected": [
+            "alice"
+          ],
+          "returned": [
+            "alice"
+          ],
+          "precision": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_set_match": true,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 1.542958,
+          "estimated_context_tokens": 47,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q19",
+          "difficulty": "moderate",
+          "category": "user_isolation",
+          "query": "editor theme colours",
+          "scope": {
+            "project_id": "evaluation",
+            "user_id": "bob"
+          },
+          "expected": [
+            "bob"
+          ],
+          "returned": [
+            "bob"
+          ],
+          "precision": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_set_match": true,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 1.627583,
+          "estimated_context_tokens": 46,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q20",
+          "difficulty": "difficult",
+          "category": "omitted_user_scope",
+          "query": "editor theme colours",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [],
+          "returned": [],
+          "precision": null,
+          "precision_at_k": null,
+          "recall": null,
+          "reciprocal_rank": null,
+          "exact_set_match": true,
+          "correct_abstention": true,
+          "forbidden_returned": [],
+          "latency_ms": 0.991125,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q21",
+          "difficulty": "moderate",
+          "category": "agent_scope",
+          "query": "invoice overflow",
+          "scope": {
+            "project_id": "evaluation",
+            "agent_id": "reviewer"
+          },
+          "expected": [
+            "reviewer_private"
+          ],
+          "returned": [
+            "reviewer_private"
+          ],
+          "precision": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_set_match": true,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 1.693542,
+          "estimated_context_tokens": 61,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q22",
+          "difficulty": "difficult",
+          "category": "agent_isolation",
+          "query": "invoice overflow",
+          "scope": {
+            "project_id": "evaluation",
+            "agent_id": "coder"
+          },
+          "expected": [],
+          "returned": [],
+          "precision": null,
+          "precision_at_k": null,
+          "recall": null,
+          "reciprocal_rank": null,
+          "exact_set_match": true,
+          "correct_abstention": true,
+          "forbidden_returned": [],
+          "latency_ms": 0.748583,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q23",
+          "difficulty": "moderate",
+          "category": "session_scope",
+          "query": "atlas parser",
+          "scope": {
+            "project_id": "evaluation",
+            "session_id": "s1"
+          },
+          "expected": [
+            "session_private"
+          ],
+          "returned": [
+            "session_private"
+          ],
+          "precision": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_set_match": true,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 1.515708,
+          "estimated_context_tokens": 59,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q24",
+          "difficulty": "difficult",
+          "category": "session_isolation",
+          "query": "atlas parser",
+          "scope": {
+            "project_id": "evaluation",
+            "session_id": "s2"
+          },
+          "expected": [],
+          "returned": [],
+          "precision": null,
+          "precision_at_k": null,
+          "recall": null,
+          "reciprocal_rank": null,
+          "exact_set_match": true,
+          "correct_abstention": true,
+          "forbidden_returned": [],
+          "latency_ms": 0.891375,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q25",
+          "difficulty": "moderate",
+          "category": "task_scope",
+          "query": "nebula serializer",
+          "scope": {
+            "project_id": "evaluation",
+            "task_id": "t1"
+          },
+          "expected": [
+            "task_private"
+          ],
+          "returned": [
+            "task_private"
+          ],
+          "precision": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_set_match": true,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 1.946917,
+          "estimated_context_tokens": 63,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q26",
+          "difficulty": "difficult",
+          "category": "task_isolation",
+          "query": "nebula serializer",
+          "scope": {
+            "project_id": "evaluation",
+            "task_id": "t2"
+          },
+          "expected": [],
+          "returned": [],
+          "precision": null,
+          "precision_at_k": null,
+          "recall": null,
+          "reciprocal_rank": null,
+          "exact_set_match": true,
+          "correct_abstention": true,
+          "forbidden_returned": [],
+          "latency_ms": 0.88,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q27",
+          "difficulty": "moderate",
+          "category": "global_scope",
+          "query": "credentials saved logs",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "global_credentials"
+          ],
+          "returned": [
+            "global_credentials",
+            "output"
+          ],
+          "precision": 0.5,
+          "precision_at_k": 0.3333333333333333,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 3.129875,
+          "estimated_context_tokens": 125,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q28",
+          "difficulty": "simple",
+          "category": "error_code",
+          "query": "ModuleNotFoundError requests",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "import_error"
+          ],
+          "returned": [
+            "import_error"
+          ],
+          "precision": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_set_match": true,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 2.693458,
+          "estimated_context_tokens": 70,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q29",
+          "difficulty": "simple",
+          "category": "error_code",
+          "query": "EADDRINUSE 8000",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "port_error"
+          ],
+          "returned": [
+            "port_error"
+          ],
+          "precision": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_set_match": true,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 2.052333,
+          "estimated_context_tokens": 68,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q30",
+          "difficulty": "moderate",
+          "category": "error_code",
+          "query": "TypeError naive timezone-aware datetime",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "datetime_fix"
+          ],
+          "returned": [
+            "datetime_fix"
+          ],
+          "precision": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_set_match": true,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 1.888167,
+          "estimated_context_tokens": 70,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q31",
+          "difficulty": "moderate",
+          "category": "natural_language",
+          "query": "Why must replacing a fact be atomic?",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "transactions"
+          ],
+          "returned": [
+            "transactions",
+            "global_credentials",
+            "tool_pairs"
+          ],
+          "precision": 0.3333333333333333,
+          "precision_at_k": 0.3333333333333333,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 2.104584,
+          "estimated_context_tokens": 186,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q32",
+          "difficulty": "moderate",
+          "category": "natural_language",
+          "query": "Preserve tool results when compacting conversation history",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "tool_pairs"
+          ],
+          "returned": [
+            "tool_pairs"
+          ],
+          "precision": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_set_match": true,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 2.664709,
+          "estimated_context_tokens": 65,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q33",
+          "difficulty": "difficult",
+          "category": "unverified",
+          "query": "GPU benchmark",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [],
+          "returned": [],
+          "precision": null,
+          "precision_at_k": null,
+          "recall": null,
+          "reciprocal_rank": null,
+          "exact_set_match": true,
+          "correct_abstention": true,
+          "forbidden_returned": [],
+          "latency_ms": 0.770042,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q34",
+          "difficulty": "difficult",
+          "category": "paraphrase",
+          "query": "How do people prove who they are?",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "auth"
+          ],
+          "returned": [],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 1.056333,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q35",
+          "difficulty": "difficult",
+          "category": "paraphrase",
+          "query": "Recall our choice for remembering things between launches",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "storage"
+          ],
+          "returned": [],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 1.058959,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q36",
+          "difficulty": "difficult",
+          "category": "paraphrase",
+          "query": "What prevents endless attempts after throttling?",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "retry"
+          ],
+          "returned": [
+            "retry"
+          ],
+          "precision": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_set_match": true,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 2.04775,
+          "estimated_context_tokens": 60,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q37",
+          "difficulty": "difficult",
+          "category": "paraphrase",
+          "query": "How do we keep wall clock representations comparable?",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "datetime_fix"
+          ],
+          "returned": [],
+          "precision": 0.0,
+          "precision_at_k": 0.0,
+          "recall": 0.0,
+          "reciprocal_rank": 0.0,
+          "exact_set_match": false,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 0.9815,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q38",
+          "difficulty": "simple",
+          "category": "no_match",
+          "query": "zebrafish aquarium salinity",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [],
+          "returned": [],
+          "precision": null,
+          "precision_at_k": null,
+          "recall": null,
+          "reciprocal_rank": null,
+          "exact_set_match": true,
+          "correct_abstention": true,
+          "forbidden_returned": [],
+          "latency_ms": 0.871,
+          "estimated_context_tokens": 0,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q39",
+          "difficulty": "moderate",
+          "category": "recent_episode",
+          "query": "toolbar icon alignment",
+          "scope": {
+            "project_id": "evaluation"
+          },
+          "expected": [
+            "recent_icon"
+          ],
+          "returned": [
+            "recent_icon"
+          ],
+          "precision": 1.0,
+          "precision_at_k": 0.3333333333333333,
+          "recall": 1.0,
+          "reciprocal_rank": 1.0,
+          "exact_set_match": true,
+          "correct_abstention": null,
+          "forbidden_returned": [],
+          "latency_ms": 1.74075,
+          "estimated_context_tokens": 52,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        },
+        {
+          "id": "q40",
+          "difficulty": "difficult",
+          "category": "scope_disabled_global",
+          "query": "credentials logs",
+          "scope": {
+            "project_id": "evaluation",
+            "include_global": false
+          },
+          "expected": [],
+          "returned": [
+            "output"
+          ],
+          "precision": null,
+          "precision_at_k": null,
+          "recall": null,
+          "reciprocal_rank": null,
+          "exact_set_match": false,
+          "correct_abstention": false,
+          "forbidden_returned": [],
+          "latency_ms": 2.008166,
+          "estimated_context_tokens": 67,
+          "embedding_failures": 0,
+          "timed_embedding_requests": 0
+        }
+      ]
+    }
+  }
+}

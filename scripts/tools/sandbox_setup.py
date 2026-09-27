@@ -41,19 +41,23 @@ class Sandbox:
                        '--wait=false'], check=True, timeout=30)
 
 
-def project_files(root):
+def project_files(root, *, excluded_paths=()):
+    memory_path = Path(os.getenv('MEMORY_DB_PATH', str(Path(__file__).resolve().parents[2] / 'memory' / 'memories.db'))).resolve()
+    excluded_paths = {Path(path).resolve() for path in excluded_paths} | {memory_path}
     for directory, dirs, files in os.walk(root, followlinks=False):
         dirs[:] = [d for d in dirs if d not in EXCLUDED and not d.startswith('.env')
                    and not (Path(directory) / d).is_symlink()]
         for name in files:
             path = Path(directory) / name
             if (path.is_symlink() or name.startswith('.env')
-                    or path.suffix.lower() in {'.pem', '.key', '.pfx'}):
+                    or path.suffix.lower() in {'.pem', '.key', '.pfx', '.db', '.sqlite', '.sqlite3'}
+                    or name.endswith(('-wal', '-shm', '-journal'))
+                    or path.resolve() in excluded_paths):
                 continue
             yield path
 
 
-def create_session(project):
+def create_session(project, *, excluded_paths=()):
     profile = os.getenv('MINIKUBE_PROFILE', 'minikube')
     namespace = os.getenv('SANDBOX_NAMESPACE', 'agent-sandbox')
     print(f'Starting Minikube profile: {profile}')
@@ -72,7 +76,7 @@ def create_session(project):
         sandbox._kubectl(['wait', '--for=condition=Ready', 'pod/' + pod_name,
                            '--timeout=180s'], check=True, timeout=190)
         with tempfile.TemporaryDirectory() as directory:
-            for path in project_files(project):
+            for path in project_files(project, excluded_paths=excluded_paths):
                 destination = Path(directory) / path.relative_to(project)
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(path, destination)

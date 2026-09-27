@@ -21,3 +21,17 @@ __all__ = [
     "TaskState",
     "get_relevant_memories",
 ]
+
+from .service import (
+    CheckpointConflict,
+    ContextBudgetExceeded,
+    MemoryService,
+    SessionSnapshot,
+    estimate_tokens,
+    project_identity,
+)
+
+__all__ += [
+    'CheckpointConflict', 'ContextBudgetExceeded', 'MemoryService',
+    'SessionSnapshot', 'estimate_tokens', 'project_identity',
+]

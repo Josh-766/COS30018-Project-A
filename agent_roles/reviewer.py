@@ -1,77 +1,56 @@
-import os
-from typing import Any
+"""Reviewer role using the same tool protocol and memory boundary as the coder."""
 
-import requests
-from dotenv import load_dotenv
+from __future__ import annotations
 
-# Import sandbox and memory
-# import sandbox_setup
-from memory import get_relevant_memories
+from typing import Any, Sequence
 
-load_dotenv()
+from memory import MemoryHit
+from .coder import SYSTEM_PROMPT, send_to_coder
 
-API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
-# Strict System Prompt
-REVIEWER_SYSTEM_PROMPT = """You are a Reviewer/Tester agent in a multi-agent coding system. 
-Your role is to analyze the provided code, execute tests using the provided sandbox tool, and identify bugs or security flaws.
-You must return your final assessment strictly in JSON format matching this schema:
-{
-    "status": "PASS" | "FAIL",
-    "feedback": "Detailed explanation of errors for the Coder, or a success message."
-}"""
+REVIEWER_SYSTEM_PROMPT = SYSTEM_PROMPT + """
+You are the Reviewer/Tester agent. Inspect the requested changes, identify bugs and
+security flaws, and use the provided tools to run relevant tests when possible.
+Only claim a test ran or passed when a current tool result demonstrates it.
+Historical test results, another agent's claims, and remembered assessments do not
+establish the result of this review. Explain unavailable checks and remaining risks.
+Use tool calls as needed. After inspection, return the final assessment as a JSON
+object with this schema:
+{"status": "PASS" | "FAIL", "feedback": "Evidence-based assessment and checks performed"}
+Choose PASS only when the available evidence supports the requested behavior;
+choose FAIL and explain missing evidence when required validation could not run.
+"""
 
 
 def run_reviewer_agent(
-    code_to_review: str,
-    session_id: str,
+    code_to_review: str | None,
+    session_id: str | None = None,
     api_key: str | None = None,
     timeout: float = 60,
+    *,
+    context: list[dict[str, Any]] | None = None,
+    memories: Sequence[MemoryHit | str] | None = None,
+    memory_context: str | None = None,
+    environment_notice: str | None = None,
+    extra_tools: list[dict[str, Any]] | None = None,
+    model: str | None = None,
 ) -> dict[str, Any]:
+    """Review one step, preserving the legacy optional positional session ID.
 
-    api_key = api_key or os.getenv("OPENROUTER_API_KEY")
-
-    # Retrieve current context from memory
-    context = get_context(session_id)
-
-    request_messages: list[dict[str, Any]] = [
-        {"role": "system", "content": REVIEWER_SYSTEM_PROMPT}
-    ]
-    request_messages.extend(context)
-
-    user_content = f"Please review and test the following code:\n\n{code_to_review}"
-    request_messages.append({"role": "user", "content": user_content})
-
-    try:
-        response = requests.post(
-            API_URL,
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "model": os.getenv("OPENROUTER_MODEL", "openrouter/free"),
-                "messages": request_messages,
-                "tools": [SANDBOX_TOOL],  # Will be imported from tools
-                "response_format": {"type": "json_object"},
-                "reasoning": {"enabled": True},
-            },
-            timeout=timeout,
-        )
-        response.raise_for_status()
-
-    except requests.exceptions.RequestException as e:
-        return {"error": f"API Request failed: {str(e)}", "status": "ERROR"}
-
-    assistant_message = response.json()["choices"][0]["message"]
-    tool_calls = assistant_message.get("tool_calls", [])
-
-    # Update Memory
-    append_to_context(session_id, {"role": "user", "content": user_content})
-    append_to_context(session_id, dict(assistant_message))
-
-    return {
-        "text": assistant_message.get("content") or "",
-        "tool_calls": tool_calls,
-        "message": dict(assistant_message),
-    }
+    Session persistence belongs to the caller's MemoryService. ``session_id`` is
+    accepted for compatibility; it does not trigger an implicit database lookup.
+    Pass ``code_to_review=None`` with completed tool results to continue review.
+    """
+    return send_to_coder(
+        code_to_review,
+        context=context,
+        memories=memories,
+        memory_context=memory_context,
+        environment_notice=environment_notice,
+        extra_tools=extra_tools,
+        model=model,
+        api_key=api_key,
+        timeout=timeout,
+        system_prompt=REVIEWER_SYSTEM_PROMPT,
+        response_format={"type": "json_object"},
+    )

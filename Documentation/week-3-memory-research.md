@@ -1,5 +1,7 @@
 # Agent Memory Research and Initial Design
 
+> Historical Week 3 research: repository findings and prototype scope below describe that stage, not the current implementation. See [Memory implementation](memory-implementation.md) for the completed component and its limits, and [Memory evaluation](memory-evaluation.md) for reproducible retrieval results. The original research is retained as contribution evidence.
+
 **Unit:** COS30018 Intelligent Systems  
 **Project:** LLM-Powered Multi-Agent Coding Harness  
 **Student:** Le Nhu Ngoc Ho  

@@ -1,0 +1,26 @@
+{
+  "checked_at_utc": "2026-09-27T14:19:42.330347+00:00",
+  "configured_model": "openrouter/free",
+  "synthetic_data_only": true,
+  "memory_smoke": {
+    "kind": "live_memory_only_smoke",
+    "synthetic_data": true,
+    "passed": false,
+    "error_class": "HTTPError",
+    "latency_ms": 568,
+    "tool_calls_executed": 0,
+    "not_end_to_end_coding_evaluation": true
+  },
+  "diagnostic_connectivity_attempt": {
+    "live_connectivity": false,
+    "error_class": "HTTPError",
+    "http_status": 429,
+    "tool_calls_executed": 0,
+    "latency_ms": 406
+  },
+  "coding_sandbox_prerequisites": {
+    "kubectl_available": true,
+    "minikube_available": false
+  },
+  "conclusion": "Live memory behavior was not verified: the diagnostic model request returned HTTP429, and the current coding runner requires the absent minikube executable. No model-generated tool calls were executed. Offline results are reported separately."
+}

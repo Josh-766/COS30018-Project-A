@@ -17,6 +17,29 @@ def list_tools():
     return [definition for definition, execute in SPECS.values()]
 
 
+def _valid_arguments(arguments, parameters):
+    """Validate declared required/optional fields without accepting bool as int."""
+    if not isinstance(arguments, dict):
+        return False
+    properties = parameters.get('properties', {})
+    if (not set(parameters.get('required', ())) <= set(arguments)
+            or (parameters.get('additionalProperties') is False and not set(arguments) <= set(properties))):
+        return False
+    types = {'string': str, 'integer': int, 'number': (int, float),
+             'boolean': bool, 'object': dict, 'array': list}
+    for key, value in arguments.items():
+        spec = properties.get(key, {})
+        expected = spec.get('type')
+        if expected in types and (not isinstance(value, types[expected])
+                                  or (expected in {'integer', 'number'} and isinstance(value, bool))):
+            return False
+        if 'minimum' in spec and value < spec['minimum']:
+            return False
+        if 'maximum' in spec and value > spec['maximum']:
+            return False
+    return True
+
+
 def execute_tool(tool_call, *, sandbox):
     try:
         function = tool_call['function']
@@ -24,11 +47,10 @@ def execute_tool(tool_call, *, sandbox):
         if name not in SPECS:
             raise ValueError('execute_tool: unknown tool')
         arguments = json.loads(function['arguments'])
-        fields = SPECS[name][0]['function']['parameters']['required']
-        if (not isinstance(arguments, dict) or set(arguments) != set(fields)
-                or any(not isinstance(v, str) for v in arguments.values())):
+        parameters = SPECS[name][0]['function']['parameters']
+        if not _valid_arguments(arguments, parameters):
             raise ValueError('execute_tool: invalid arguments')
         result = SPECS[name][1](arguments, sandbox)
-        return json.dumps(result)
+        return json.dumps(result, ensure_ascii=False, separators=(',', ':'))
     except Exception as exc:
         return json.dumps({'error': f'execute_tool: {exc}'})
