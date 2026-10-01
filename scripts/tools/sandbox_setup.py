@@ -14,12 +14,27 @@ EXCLUDED = {'.git', '.venv', 'venv', 'node_modules', '__pycache__', '.ssh', '.aw
             '.codex', '.agents', 'sandbox-output', '.pytest_cache'}
 
 
+
 class Sandbox:
     def __init__(self, pod_name, namespace, profile):
         self.pod_name = pod_name
         self.namespace = namespace
         self.profile = profile
 
+
+    def save_to_host(self, project: Path) -> None:
+
+        self._kubectl(
+            [
+                "cp",
+                "-c", "sandbox",
+                f"{self.pod_name}:/home/user/project/.",
+                ".",
+            ],
+            cwd=project,
+            check=True,
+            timeout=180,
+        )
     def _kubectl(self, arguments, **kwargs):
         return subprocess.run(
             ['kubectl', '--context', self.profile, '--namespace', self.namespace] + arguments,

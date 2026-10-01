@@ -8,15 +8,33 @@ from scripts.tools.tool_registry import execute_tool
 from scripts.tools.sandbox_setup import create_session
 
 
+def set_project_path() -> Path | None:
+    default = Path.cwd()
+    while True:
+        try:
+            value = input(f"Default directory [{default}] enter another to change: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            return None
+
+        project = Path(value.strip('"') or default).expanduser().resolve()
+        if project.is_dir():
+            return project
+        print("That directory does not exist.")
+
+
 def main() -> None:
+    project = set_project_path()
+    if project is None:
+        return
+
     memory_store = MemoryStore()
-    project_id = os.getenv("MEMORY_PROJECT_ID") or Path.cwd().resolve().name
+    project_id = os.getenv("MEMORY_PROJECT_ID") or str(project)
     context = []
 
     print("Type 'exit' or 'quit' to stop.")
     print("Memory commands: /remember, /memories, /forget <id>")
 
-    sandbox = create_session(Path.cwd())
+    sandbox = create_session(project)
     try:
         while True:
             try:
@@ -88,12 +106,14 @@ def main() -> None:
                         "tool_call_id": tool_call["id"],
                         "content": output,
                     })
+                    sandbox.save_to_host(project)
 
                 result = send_to_coder(None, context=context)
 
             context = result["context"]
             print(f"\nCoder: {result['text']}")
     finally:
+        sandbox.save_to_host(project)
         sandbox.terminate()
 
 
