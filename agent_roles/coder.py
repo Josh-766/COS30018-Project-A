@@ -47,7 +47,8 @@ def send_to_coder(
         )
     else:
         user_content = text
-    request_messages.append({"role": "user", "content": user_content})
+    if text is not None:
+        request_messages.append({"role": "user", "content": user_content})
 
         
     response = requests.post(
