@@ -1,148 +1,147 @@
-import tempfile
-from datetime import datetime, timedelta, timezone
+"""Persistent, scoped long-term memory using the native LangGraph store."""
+
 from pathlib import Path
-import sqlite3
+import tempfile
 import unittest
 
-from memory import MemoryStore, SensitiveMemoryError, get_relevant_memories
+from langgraph.checkpoint.sqlite import SqliteSaver
+from langgraph.store.sqlite import SqliteStore
+
+from memory import (
+    MemoryContext,
+    SensitiveMemoryError,
+    forget_memory,
+    list_memories,
+    open_memory,
+    save_memory,
+    search_memories,
+    thread_config,
+)
 
 
-class MemoryStoreTest(unittest.TestCase):
+class MemoryTest(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary_directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary_directory.cleanup)
         self.db_path = Path(self.temporary_directory.name) / "memory.db"
+        self.context = MemoryContext(project_id="project-a", user_id="alice")
 
-    def tearDown(self) -> None:
-        self.temporary_directory.cleanup()
+    def test_native_store_and_checkpointer_survive_reopening_database(self) -> None:
+        with open_memory(self.db_path) as (checkpointer, store):
+            self.assertIsInstance(checkpointer, SqliteSaver)
+            self.assertIsInstance(store, SqliteStore)
+            saved = save_memory(store, self.context, "API requests need a 60-second timeout")
 
-    def test_memory_survives_new_store_instance(self) -> None:
-        first_process = MemoryStore(self.db_path)
-        saved = first_process.add("All API requests require a 60-second timeout")
+        with open_memory(self.db_path) as (_, restarted_store):
+            self.assertEqual(search_memories(restarted_store, self.context, "timeout"), [saved])
+            self.assertEqual(list_memories(restarted_store, self.context), [saved])
 
-        restarted_process = MemoryStore(self.db_path)
-        results = restarted_process.search("What timeout should API requests use?")
+    def test_duplicate_has_stable_id_without_creating_a_second_record(self) -> None:
+        with open_memory(self.db_path) as (_, store):
+            first = save_memory(store, self.context, "Use SQLite")
+            duplicate = save_memory(store, self.context, "  Use SQLite  ")
+            self.assertEqual(duplicate, first)
+            self.assertEqual(list_memories(store, self.context), [first])
 
-        self.assertEqual(results, [saved])
+        with open_memory(self.db_path) as (_, store):
+            restarted_duplicate = save_memory(store, self.context, "Use SQLite")
+            self.assertEqual(restarted_duplicate, first)
+            self.assertEqual(list_memories(store, self.context), [first])
 
-    def test_retrieval_returns_only_relevant_memories(self) -> None:
-        store = MemoryStore(self.db_path)
-        store.add("The project must use Python 3.12", "requirement")
-        store.add("The user interface uses a dark colour palette", "decision")
+    def test_memories_are_isolated_by_project_and_user(self) -> None:
+        other_project = MemoryContext(project_id="project-b", user_id="alice")
+        other_user = MemoryContext(project_id="project-a", user_id="bob")
+        with open_memory(self.db_path) as (_, store):
+            own = save_memory(store, self.context, "Project uses Python")
+            project_memory = save_memory(store, other_project, "Project uses Rust")
+            user_memory = save_memory(store, other_user, "Project uses Java")
 
-        results = get_relevant_memories("Which Python version?", store=store)
+            for context, expected in (
+                (self.context, own),
+                (other_project, project_memory),
+                (other_user, user_memory),
+            ):
+                with self.subTest(context=context):
+                    self.assertEqual(search_memories(store, context, "project"), [expected])
+                    self.assertEqual(list_memories(store, context), [expected])
 
-        self.assertEqual(len(results), 1)
-        self.assertIn("Python 3.12", results[0])
-        self.assertIn("requirement", results[0])
+            self.assertFalse(forget_memory(store, other_project, own["id"]))
+            self.assertFalse(forget_memory(store, other_user, own["id"]))
+            self.assertEqual(list_memories(store, self.context), [own])
 
-    def test_delete_removes_memory_from_search(self) -> None:
-        store = MemoryStore(self.db_path)
-        saved = store.add("Use SQLite for persistent memory")
+    def test_keyword_search_filters_irrelevant_memories_and_obeys_limit(self) -> None:
+        with open_memory(self.db_path) as (_, store):
+            matching = [
+                save_memory(store, self.context, f"Python setting number {index}")
+                for index in range(8)
+            ]
+            save_memory(store, self.context, "The interface uses a dark palette")
 
-        self.assertTrue(store.delete(saved.id))
-        self.assertEqual(store.search("Which SQLite database?"), [])
-        self.assertFalse(store.delete(saved.id))
+            results = search_memories(store, self.context, "PYTHON", limit=3)
 
-    def test_retrieval_isolates_project_scope_and_includes_global_memory(self) -> None:
-        store = MemoryStore(self.db_path)
-        global_memory = store.add("All projects use reviewer approval")
-        project_a = store.add(
-            "Project A uses FastAPI", "project_fact", project_id="project-a"
-        )
-        store.add("Project B uses Flask", "project_fact", project_id="project-b")
+            self.assertEqual(len(results), 3)
+            self.assertTrue(all(record in matching for record in results))
+            self.assertEqual(search_memories(store, self.context, "unrelatedword"), [])
+            self.assertEqual(search_memories(store, self.context, ""), [])
+            self.assertEqual(search_memories(store, self.context, "Python", limit=0), [])
 
-        results = store.search("Which project uses API reviewer?", project_id="project-a")
+    def test_list_and_search_read_beyond_the_first_store_page(self) -> None:
+        with open_memory(self.db_path) as (_, store):
+            saved = [
+                save_memory(store, self.context, f"Unique marker{index:04d}")
+                for index in range(205)
+            ]
 
-        self.assertEqual({record.id for record in results}, {global_memory.id, project_a.id})
-
-    def test_expired_and_superseded_memories_are_not_retrieved(self) -> None:
-        store = MemoryStore(self.db_path)
-        expired = store.add(
-            "Deploy with version one",
-            valid_until=datetime.now(timezone.utc) - timedelta(seconds=1),
-        )
-        old = store.add("The timeout is thirty seconds")
-        replacement = store.supersede(old.id, "The timeout is sixty seconds")
-
-        results = store.search("What timeout version should we use?", limit=10)
-
-        self.assertNotIn(expired.id, {record.id for record in results})
-        self.assertNotIn(old.id, {record.id for record in results})
-        self.assertIn(replacement.id, {record.id for record in results})
-        self.assertEqual(replacement.supersedes_id, old.id)
-        self.assertEqual(store.get(old.id).status, "superseded")  # type: ignore[union-attr]
-
-        self.assertTrue(store.delete(old.id))
-        self.assertIsNone(store.get(replacement.id).supersedes_id)  # type: ignore[union-attr]
-
-    def test_updating_content_refreshes_the_search_index(self) -> None:
-        store = MemoryStore(self.db_path)
-        saved = store.add("Use the Falcon framework")
-
-        updated = store.update(saved.id, content="Use the FastAPI framework")
-
-        self.assertIsNotNone(updated)
-        self.assertEqual(store.search("Falcon"), [])
-        self.assertEqual(store.search("FastAPI"), [updated])
-
-    def test_retrieve_returns_provenance_and_obeys_token_budget(self) -> None:
-        store = MemoryStore(self.db_path)
-        saved = store.add(
-            "Python 3.12",
-            "requirement",
-            source_type="document",
-            source_reference="assignment.pdf#page=2",
-            reliability=0.9,
-        )
-
-        hits = store.retrieve("Python version", max_tokens=3)
-
-        self.assertEqual(len(hits), 1)
-        self.assertEqual(hits[0].memory_id, saved.id)
-        self.assertEqual(hits[0].source, "document:assignment.pdf#page=2")
-        self.assertGreater(hits[0].relevance_score, 0)
-
-    def test_exact_duplicate_in_same_scope_is_not_inserted_twice(self) -> None:
-        store = MemoryStore(self.db_path)
-        first = store.add("Use SQLite", project_id="project-a")
-        duplicate = store.add("  Use SQLite  ", project_id="project-a")
-        other_scope = store.add("Use SQLite", project_id="project-b")
-
-        self.assertEqual(first.id, duplicate.id)
-        self.assertNotEqual(first.id, other_scope.id)
-        self.assertEqual(len(store.list_all()), 2)
-
-    def test_credentials_are_rejected(self) -> None:
-        store = MemoryStore(self.db_path)
-
-        with self.assertRaises(SensitiveMemoryError):
-            store.add("api_key=sk-example-secret-value")
-
-        self.assertEqual(store.list_all(), [])
-
-    def test_legacy_database_is_migrated_and_indexed(self) -> None:
-        with sqlite3.connect(self.db_path) as connection:
-            connection.execute(
-                """
-                CREATE TABLE memories (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    content TEXT NOT NULL,
-                    memory_type TEXT NOT NULL DEFAULT 'decision',
-                    created_at TEXT NOT NULL
-                )
-                """
+            self.assertEqual(
+                {record["id"] for record in list_memories(store, self.context)},
+                {record["id"] for record in saved},
             )
-            connection.execute(
-                "INSERT INTO memories(content, memory_type, created_at) VALUES (?, ?, ?)",
-                ("Legacy memory uses SQLite", "decision", datetime.now(timezone.utc).isoformat()),
-            )
+            # Exercise both ends regardless of the store's ordering.
+            for index in (0, 204):
+                with self.subTest(index=index):
+                    self.assertEqual(
+                        search_memories(store, self.context, f"marker{index:04d}"),
+                        [saved[index]],
+                    )
 
-        store = MemoryStore(self.db_path)
+    def test_forget_is_persistent_and_reports_an_absent_record(self) -> None:
+        with open_memory(self.db_path) as (_, store):
+            saved = save_memory(store, self.context, "Use SQLite for memory")
+            self.assertTrue(forget_memory(store, self.context, saved["id"]))
+            self.assertFalse(forget_memory(store, self.context, saved["id"]))
+            self.assertEqual(search_memories(store, self.context, "SQLite"), [])
 
-        results = store.search("SQLite")
-        self.assertEqual(len(results), 1)
-        self.assertEqual(results[0].source_type, "user")
-        self.assertEqual(results[0].status, "active")
+        with open_memory(self.db_path) as (_, store):
+            self.assertEqual(list_memories(store, self.context), [])
+
+    def test_empty_oversized_and_sensitive_content_are_not_written(self) -> None:
+        with open_memory(self.db_path) as (_, store):
+            for content in ("", "   ", "x" * 2001):
+                with self.subTest(content_length=len(content)):
+                    with self.assertRaises(ValueError):
+                        save_memory(store, self.context, content)
+
+            for content in (
+                "api_key=sk-example-secret-value",
+                "Authorization: Bearer abcdefghijklmnopqrstuvwxyz",
+                "-----BEGIN PRIVATE KEY-----",
+            ):
+                with self.subTest(content=content):
+                    with self.assertRaises(SensitiveMemoryError):
+                        save_memory(store, self.context, content)
+
+            self.assertEqual(list_memories(store, self.context), [])
+            self.assertEqual(save_memory(store, self.context, "x" * 2000)["content"], "x" * 2000)
+
+    def test_checkpoint_thread_keys_isolate_project_user_and_thread(self) -> None:
+        configs = [
+            thread_config(self.context, "thread-one"),
+            thread_config(self.context, "thread-two"),
+            thread_config(MemoryContext(project_id="project-b", user_id="alice"), "thread-one"),
+            thread_config(MemoryContext(project_id="project-a", user_id="bob"), "thread-one"),
+        ]
+        self.assertEqual(len({config["configurable"]["thread_id"] for config in configs}), 4)
+        self.assertEqual(thread_config(self.context, "thread-one"), configs[0])
 
 
 if __name__ == "__main__":
