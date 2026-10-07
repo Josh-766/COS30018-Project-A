@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 
 # Import sandbox and memory
 # import sandbox_setup
-from memory import get_relevant_memories
 
 load_dotenv()
 

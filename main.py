@@ -1,10 +1,17 @@
 import os
 from pathlib import Path
+from uuid import uuid4
 
-from memory import MemoryStore, get_relevant_memories
+from memory import (
+    MemoryContext,
+    forget_memory,
+    list_memories,
+    open_memory,
+    save_memory,
+    thread_config,
+)
 
-from agent_roles import send_to_coder
-from scripts.tools.tool_registry import execute_tool
+from agent_roles.graph import create_coder_graph
 from scripts.tools.sandbox_setup import create_session
 
 
@@ -27,94 +34,97 @@ def main() -> None:
     if project is None:
         return
 
-    memory_store = MemoryStore()
-    project_id = os.getenv("MEMORY_PROJECT_ID") or str(project)
-    context = []
-
-    print("Type 'exit' or 'quit' to stop.")
-    print("Memory commands: /remember, /memories, /forget <id>")
-
-    sandbox = create_session(project)
-    try:
-        while True:
+    context = MemoryContext(
+        project_id=os.getenv("MEMORY_PROJECT_ID") or str(project),
+        user_id=os.getenv("MEMORY_USER_ID") or "default",
+    )
+    thread_id = os.getenv("MEMORY_THREAD_ID") or uuid4().hex
+    with open_memory() as (checkpointer, store):
+        sandbox = create_session(project)
+        try:
+            graph = create_coder_graph(
+                checkpointer=checkpointer, store=store, sandbox=sandbox, project=project
+            )
+            chat(graph, store, context, thread_id)
+        finally:
             try:
-                text = input("\nYou: ").strip()
-            except (EOFError, KeyboardInterrupt):
-                break
+                sandbox.save_to_host(project)
+            finally:
+                sandbox.terminate()
 
-            if not text:
-                continue
 
-            if text.casefold() in {"exit", "quit"}:
-                break
+def chat(graph, store, context: MemoryContext, thread_id: str) -> None:
+    """Send only new messages; LangGraph loads previous messages by thread ID."""
+    print("Type 'exit' or 'quit' to stop.")
+    print("Memory: /remember <fact>, /memories, /forget <id>")
+    print("Conversation: /new, /resume <thread-id>, /retry")
+    print(f"Thread: {thread_id}")
 
+    while True:
+        try:
+            text = input("\nYou: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            break
+        if not text:
+            continue
+        if text.casefold() in {"exit", "quit"}:
+            break
+
+        if text == "/new":
+            thread_id = uuid4().hex
+            print(f"Thread: {thread_id}")
+            continue
+        if text.startswith("/resume "):
+            thread_id = text.removeprefix("/resume ").strip()
+            print(f"Thread: {thread_id}")
+            continue
+
+        try:
             if text.startswith("/remember "):
-                memory_text = text.removeprefix("/remember ").strip()
-                try:
-                    record = memory_store.add(
-                        memory_text,
-                        project_id=project_id,
-                        source_type="user",
-                        reliability=1.0,
-                    )
-                except ValueError as error:
-                    print(f"\nMemory: {error}")
-                else:
-                    print(f"\nMemory: saved decision #{record.id}")
+                record = save_memory(store, context, text.removeprefix("/remember "))
+                print(f"\nMemory: saved #{record['id']}")
                 continue
-
             if text == "/memories":
-                records = memory_store.list_all(project_id=project_id)
+                records = list_memories(store, context)
                 if not records:
                     print("\nMemory: no saved memories")
                 for record in records:
-                    print(f"\n[{record.memory_type} #{record.id}] {record.content}")
+                    print(f"\n[#{record['id']}] {record['content']}")
                 continue
-
             if text.startswith("/forget "):
                 memory_id = text.removeprefix("/forget ").strip()
-                if not memory_id.isdigit():
-                    print("\nMemory: usage: /forget <id>")
-                elif memory_store.delete(int(memory_id)):
-                    print(f"\nMemory: deleted #{memory_id}")
-                else:
-                    print(f"\nMemory: #{memory_id} was not found")
+                deleted = forget_memory(store, context, memory_id)
+                print(f"\nMemory: #{memory_id} {'deleted' if deleted else 'was not found'}")
                 continue
+        except ValueError as error:
+            print(f"\nMemory: {error}")
+            continue
 
-            relevant_memories = get_relevant_memories(
-                text,
-                store=memory_store,
-                project_id=project_id,
-                max_tokens=500,
-            )
+        if text.startswith("/") and text != "/retry":
+            print("Unknown command. Use /remember <fact>, /memories, /forget <id>, "
+                  "/new, /resume <thread-id>, or /retry.")
+            continue
 
-            result = send_to_coder(
-                text,
-                context=context,
-                memories=relevant_memories,
-            )
-
-            while result["has_tool_call"]:
-                context = result["context"]
-
-                for tool_call in result["tool_calls"]:
-                    print(f"\nRunning tool: {tool_call['function']['name']}")
-                    output = execute_tool(tool_call, sandbox=sandbox)
-                    print(output)
-                    context.append({
-                        "role": "tool",
-                        "tool_call_id": tool_call["id"],
-                        "content": output,
-                    })
-                    sandbox.save_to_host(project)
-
-                result = send_to_coder(None, context=context)
-
-            context = result["context"]
-            print(f"\nCoder: {result['text']}")
-    finally:
-        sandbox.save_to_host(project)
-        sandbox.terminate()
+        config = thread_config(context, thread_id)
+        pending = bool(graph.get_state(config).next)
+        if pending and text != "/retry":
+            print("This thread has an unfinished turn. Use /retry to continue it or /new.")
+            continue
+        if text == "/retry" and not pending:
+            print("There is no unfinished turn to retry.")
+            continue
+        update = None if text == "/retry" else {"messages": [{"role": "user", "content": text}]}
+        try:
+            for step in graph.stream(update, config, context=context, stream_mode="updates"):
+                for message in step.get("coder", {}).get("messages", []):
+                    for call in message.get("tool_calls", []):
+                        print(f"\nRunning tool: {call['function']['name']}")
+                    if not message.get("tool_calls"):
+                        print(f"\nCoder: {message.get('content') or ''}")
+                for message in step.get("tools", {}).get("messages", []):
+                    print(message["content"])
+        except Exception as error:
+            print(f"\nCoder: {error}\nUse /retry to continue from the last checkpoint or /new.")
 
 
 if __name__ == "__main__":
