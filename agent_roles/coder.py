@@ -33,6 +33,7 @@ def send_to_coder(
     api_key: str | None = None,
     timeout: float = 60,
     system_prompt: str = SYSTEM_PROMPT,
+    tool_definitions: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
 
     api_key = api_key or os.getenv("OPENROUTER_API_KEY")
@@ -54,7 +55,7 @@ def send_to_coder(
         json={
             "model": model or os.getenv("OPENROUTER_MODEL") or DEFAULT_MODEL,
             "messages": request_messages,
-            "tools": list_tools(),
+            "tools": tool_definitions if tool_definitions is not None else list_tools(),
             "reasoning": {"enabled": True},
         },
         timeout=timeout,

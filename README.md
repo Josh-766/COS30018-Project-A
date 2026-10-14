@@ -1,6 +1,6 @@
 # COS30018 Project A
 
-A coding-agent harness with an OpenRouter coder, file and terminal tools, and a Minikube sandbox. The current `mem_v3` implementation uses LangGraph for conversation checkpoints and durable project memories. Planner, reviewer, executor, and multi-agent orchestration are still incomplete.
+A coding-agent harness with an OpenRouter planner, sequential task workers, a reviewing agent, file and terminal tools, and a Minikube sandbox. LangGraph owns the workflow, conversation checkpoints, and durable project memories.
 
 ## Setup
 
@@ -13,7 +13,16 @@ python -m pip install -r requirements.txt
 cp -n .env.example .env
 ```
 
-Set `OPENROUTER_API_KEY` in `.env`. Choose a tool-capable model through `OPENROUTER_MODEL`; the existing default is `openrouter/free`. Then run:
+In Windows PowerShell, use:
+
+```powershell
+py -3.13 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+```
+
+Set `OPENROUTER_API_KEY` in `.env`. Choose a tool-capable model through `OPENROUTER_MODEL`; `openrouter/free` is the fallback. Then run:
 
 ```sh
 python main.py

@@ -11,7 +11,7 @@ from memory import (
     thread_config,
 )
 
-from agent_roles.graph import create_coder_graph
+from agent_roles.graph import create_orchestrator_graph
 from scripts.tools.sandbox_setup import create_session
 
 
@@ -42,7 +42,7 @@ def main() -> None:
     with open_memory() as (checkpointer, store):
         sandbox = create_session(project)
         try:
-            graph = create_coder_graph(
+            graph = create_orchestrator_graph(
                 checkpointer=checkpointer, store=store, sandbox=sandbox, project=project
             )
             chat(graph, store, context, thread_id)
@@ -54,7 +54,7 @@ def main() -> None:
 
 
 def chat(graph, store, context: MemoryContext, thread_id: str) -> None:
-    """Send only new messages; LangGraph loads previous messages by thread ID."""
+    # Send only new messages; LangGraph loads previous messages by thread ID.
     print("Type 'exit' or 'quit' to stop.")
     print("Memory: /remember <fact>, /memories, /forget <id>")
     print("Conversation: /new, /resume <thread-id>, /retry")
@@ -116,15 +116,22 @@ def chat(graph, store, context: MemoryContext, thread_id: str) -> None:
         update = None if text == "/retry" else {"messages": [{"role": "user", "content": text}]}
         try:
             for step in graph.stream(update, config, context=context, stream_mode="updates"):
-                for message in step.get("coder", {}).get("messages", []):
-                    for call in message.get("tool_calls", []):
-                        print(f"\nRunning tool: {call['function']['name']}")
-                    if not message.get("tool_calls"):
-                        print(f"\nCoder: {message.get('content') or ''}")
-                for message in step.get("tools", {}).get("messages", []):
-                    print(message["content"])
+                for node, data in step.items():
+                    if node == "planner":
+                        print(f"\nPlan: {data.get('plan_summary') or 'Working through the request.'}")
+                        for index, task in enumerate(data.get("tasks", []), 1):
+                            print(f"  {index}. {task['title']}")
+                    elif node == "execute_worker":
+                        for result in data.get("task_results", [])[-1:]:
+                            print(f"\nWorker [{result['task_id']}]: {result['summary']}")
+                    elif node == "reviewer":
+                        review = data.get("review", {})
+                        print(f"\nReview {review.get('status', 'ERROR')}: {review.get('feedback', '')}")
+                    elif node == "finalize":
+                        for message in data.get("messages", []):
+                            print(f"\nAgent: {message.get('content') or ''}")
         except Exception as error:
-            print(f"\nCoder: {error}\nUse /retry to continue from the last checkpoint or /new.")
+            print(f"\nAgent: {error}\nUse /retry to continue from the last checkpoint or /new.")
 
 
 if __name__ == "__main__":
