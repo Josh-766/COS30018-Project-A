@@ -1,8 +1,9 @@
-"""Start a live sandbox using the same kubectl commands you can run manually."""
 import json
 import os
+import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import uuid
 from pathlib import Path
@@ -36,10 +37,43 @@ class Sandbox:
             timeout=180,
         )
     def _kubectl(self, arguments, **kwargs):
-        return subprocess.run(
-            ['kubectl', '--context', self.profile, '--namespace', self.namespace] + arguments,
-            **kwargs,
-        )
+        command = ['kubectl', '--context', self.profile, '--namespace', self.namespace] + arguments
+        # prevents "tar" messages but other diagnostics will appear.
+        if arguments and arguments[0] == 'cp' and not kwargs.get('capture_output'):
+            check = kwargs.pop('check', False)
+            completed = subprocess.run(
+                command,
+                stderr=subprocess.PIPE,
+                check=False,
+                **kwargs,
+            )
+            stderr = completed.stderr
+            is_text = isinstance(stderr, str)
+            lines = stderr.splitlines(keepends=True) if stderr else []
+            kept = [
+                line for line in lines
+                if not re.match(
+                    r"^tar: Removing leading .+ from member names\s*$",
+                    line.decode(errors='replace').strip() if isinstance(line, bytes) else line.strip(),
+                )
+            ]
+            filtered_stderr = (''.join(kept) if is_text else b''.join(kept)) if stderr else stderr
+            if filtered_stderr:
+                if is_text:
+                    sys.stderr.write(filtered_stderr)
+                else:
+                    sys.stderr.buffer.write(filtered_stderr)
+                    sys.stderr.buffer.flush()
+            completed.stderr = filtered_stderr
+            if check and completed.returncode:
+                raise subprocess.CalledProcessError(
+                    completed.returncode,
+                    command,
+                    output=completed.stdout,
+                    stderr=filtered_stderr,
+                )
+            return completed
+        return subprocess.run(command, **kwargs)
 
     def _execute(self, command, timeout=60, input_data=None):
         result = self._kubectl(
