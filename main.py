@@ -123,13 +123,14 @@ def chat(graph, store, context: MemoryContext, thread_id: str) -> None:
                             print(f"  {index}. {task['title']}")
                     elif node == "execute_worker":
                         for result in data.get("task_results", [])[-1:]:
-                            print(f"\nWorker [{result['task_id']}]: {result['summary']}")
+                            print(f"\nWorker [{result['task_id']}] {result['status']}: {result['summary']}")
                     elif node == "reviewer":
                         review = data.get("review", {})
                         print(f"\nReview {review.get('status', 'ERROR')}: {review.get('feedback', '')}")
-                    elif node == "finalize":
+                    elif node in {"finalize", "coder"}:
                         for message in data.get("messages", []):
-                            print(f"\nAgent: {message.get('content') or ''}")
+                            if message.get("content") and not message.get("tool_calls"):
+                                print(f"\nAgent: {message['content']}")
         except Exception as error:
             print(f"\nAgent: {error}\nUse /retry to continue from the last checkpoint or /new.")
 

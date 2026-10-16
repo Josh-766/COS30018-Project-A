@@ -2,13 +2,14 @@
 
 from contextlib import redirect_stdout
 from io import StringIO
+import json
 from pathlib import Path
 import tempfile
 from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
 
-from agent_roles.graph import create_coder_graph
+from agent_roles.graph import create_coder_graph, create_orchestrator_graph
 from main import chat
 from memory import MemoryContext, list_memories, open_memory, thread_config
 
@@ -114,6 +115,58 @@ class ChatTest(unittest.TestCase):
         self.assertIn("unfinished turn", output.getvalue())
         self.assertIn("There is no unfinished turn to retry", output.getvalue())
         self.assertIn("Recovered.", output.getvalue())
+
+    def test_orchestrator_retry_prints_final_result_and_keeps_request_once(self) -> None:
+        output = StringIO()
+        commands = ["Initial request", "Do not append this", "/retry", "/retry", "exit"]
+        plan = {"summary": "Recovered.", "tasks": []}
+        with open_memory(self.db_path) as (checkpointer, store):
+            graph = create_orchestrator_graph(
+                checkpointer=checkpointer, store=store, sandbox=self.sandbox, project=self.project,
+            )
+            with patch("builtins.input", side_effect=commands):
+                with patch("agent_roles.graph.create_plan", side_effect=[
+                    RuntimeError("temporary planner failure"), plan,
+                ]) as planner, redirect_stdout(output):
+                    chat(graph, store, self.context, "original-thread")
+            self.assertEqual(planner.call_count, 2)
+            for call in planner.call_args_list:
+                self.assertEqual(call.args, ("Initial request", [
+                    {"role": "user", "content": "Initial request"},
+                ]))
+            state = graph.get_state(thread_config(self.context, "original-thread"))
+            self.assertFalse(state.next)
+            self.assertEqual(state.values["messages"], [
+                {"role": "user", "content": "Initial request"},
+                {"role": "assistant", "content": "Recovered."},
+            ])
+        self.assertIn("temporary planner failure", output.getvalue())
+        self.assertIn("unfinished turn", output.getvalue())
+        self.assertIn("Agent: Recovered.", output.getvalue())
+        self.assertIn("There is no unfinished turn to retry", output.getvalue())
+
+    def test_orchestrator_cli_prints_task_status_review_and_final_result(self) -> None:
+        output = StringIO()
+        task = {"id": "task-1", "title": "Fix sum", "description": "Fix sum",
+                "depends_on": [], "files": ["sum.py"]}
+        worker_reply = {"text": json.dumps({"status": "complete", "summary": "Fixed"}),
+                        "tool_calls": []}
+        with open_memory(self.db_path) as (checkpointer, store):
+            graph = create_orchestrator_graph(
+                checkpointer=checkpointer, store=store, sandbox=self.sandbox, project=self.project,
+            )
+            with patch("builtins.input", side_effect=["Fix sum", "exit"]):
+                with patch("agent_roles.graph.create_plan", return_value={
+                    "summary": "Fix sum", "tasks": [task],
+                }):
+                    with patch("agent_roles.executor.send_to_coder", return_value=worker_reply):
+                        with patch("agent_roles.graph.review_work", return_value={
+                            "status": "PASS", "feedback": "Checked", "summary": "Fixed sum",
+                        }), redirect_stdout(output):
+                            chat(graph, store, self.context, "original-thread")
+        self.assertIn("Worker [task-1] complete:", output.getvalue())
+        self.assertIn("Review PASS: Checked", output.getvalue())
+        self.assertIn("Agent: Fixed sum", output.getvalue())
 
 
 if __name__ == "__main__":

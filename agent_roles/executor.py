@@ -6,11 +6,21 @@ from agent_roles.coder import SYSTEM_PROMPT, send_to_coder
 
 MAX_AGENT_ROUNDS = 12
 
+
+class AgentExecutionError(RuntimeError):
+    """A model call failed or the agent exhausted its action budget."""
+
+
 EXECUTOR_PROMPT = SYSTEM_PROMPT + """
 You are a worker assigned one task by the project orchestrator. Complete only
 that task, respect its file scope and dependencies, use tools to inspect and
 change the project, and report what you actually changed. Do not claim tests
-passed unless you ran them and saw a successful result."""
+passed unless you ran them and saw a successful result.
+Return your final response as a JSON object without markdown, with keys:
+{"status": "complete" or "incomplete" or "failed", "summary": "changes, checks
+actually run, and remaining blockers"}.
+Use incomplete when work remains, failed when you cannot perform the task, and
+complete only when the assigned task is finished."""
 
 
 def run_agent(
@@ -25,19 +35,25 @@ def run_agent(
 ) -> dict[str, Any]:
     # Run one tool-capable role until it returns a final answer.
     context = [dict(message) for message in history]
-    result = send_to_coder(
-        prompt,
-        context=context,
-        model=model,
-        system_prompt=system_prompt,
-        tool_definitions=tool_definitions,
-    )
+    context.append({"role": "user", "content": prompt})
 
     total_tool_count = 0
-    for _ in range(max_rounds):
+    for round_index in range(max_rounds + 1):
+        try:
+            result = send_to_coder(
+                None,
+                context=context,
+                model=model,
+                system_prompt=system_prompt,
+                tool_definitions=tool_definitions,
+            )
+        except Exception as error:
+            raise AgentExecutionError(f"Model call failed: {error}") from error
         tool_calls = result.get("tool_calls", [])
         if not tool_calls:
             return {"text": result.get("text", ""), "tool_count": total_tool_count}
+        if round_index == max_rounds:
+            break
 
         context.append(dict(result["message"]))
         for call in tool_calls:
@@ -48,15 +64,8 @@ def run_agent(
                 "content": output,
             })
             total_tool_count += 1
-        result = send_to_coder(
-            None,
-            context=context,
-            model=model,
-            system_prompt=system_prompt,
-            tool_definitions=tool_definitions,
-        )
 
-    raise RuntimeError(f"Agent exceeded its {max_rounds}-round tool limit.")
+    raise AgentExecutionError(f"Agent exceeded its {max_rounds}-round tool limit.")
 
 
 def execute_task(
@@ -81,16 +90,34 @@ def execute_task(
             "earlier task results. Run focused verification if practical and report exact outcomes."
         ),
     }
-    result = run_agent(
-        json.dumps(prompt, ensure_ascii=False),
-        history=history,
-        system_prompt=EXECUTOR_PROMPT,
-        model=model,
-        run_tool=run_tool,
-    )
+    try:
+        result = run_agent(
+            json.dumps(prompt, ensure_ascii=False),
+            history=history,
+            system_prompt=EXECUTOR_PROMPT,
+            model=model,
+            run_tool=run_tool,
+        )
+    except AgentExecutionError as error:
+        report = {"status": "failed", "summary": str(error)}
+    else:
+        try:
+            report = json.loads(result["text"])
+            if (
+                not isinstance(report, dict)
+                or report.get("status") not in {"complete", "incomplete", "failed"}
+                or not isinstance(report.get("summary"), str)
+                or not report["summary"].strip()
+            ):
+                raise ValueError("Invalid worker status or summary")
+        except (TypeError, ValueError):
+            report = {
+                "status": "incomplete",
+                "summary": "Worker returned an invalid task report: " + str(result["text"]),
+            }
     return {
         "task_id": task["id"],
         "title": task["title"],
-        "status": "complete",
-        "summary": result["text"],
+        "status": report["status"],
+        "summary": report["summary"],
     }

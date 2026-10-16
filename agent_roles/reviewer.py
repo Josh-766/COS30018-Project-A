@@ -51,7 +51,7 @@ def review_work(
         review = json.loads(result["text"])
     except (TypeError, json.JSONDecodeError) as error:
         raise ValueError("Reviewer must return the required JSON assessment.") from error
-    if not isinstance(review, dict) or review.get("status") not in {"PASS", "FAIL"}:
+    if not isinstance(review, dict) or review.get("status") not in ("PASS", "FAIL"):
         raise ValueError("Reviewer status must be PASS or FAIL.")
     feedback = review.get("feedback")
     summary = review.get("summary")
