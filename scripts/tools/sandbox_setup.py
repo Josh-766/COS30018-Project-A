@@ -36,9 +36,9 @@ class Sandbox:
             check=True,
             timeout=180,
         )
+
     def _kubectl(self, arguments, **kwargs):
         command = ['kubectl', '--context', self.profile, '--namespace', self.namespace] + arguments
-        # prevents "tar" messages but other diagnostics will appear.
         if arguments and arguments[0] == 'cp' and not kwargs.get('capture_output'):
             check = kwargs.pop('check', False)
             completed = subprocess.run(
@@ -53,7 +53,6 @@ class Sandbox:
             kept = [
                 line for line in lines
                 if not re.match(
-                    r"^tar: Removing leading .+ from member names\s*$",
                     line.decode(errors='replace').strip() if isinstance(line, bytes) else line.strip(),
                 )
             ]
