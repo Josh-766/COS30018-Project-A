@@ -11,7 +11,7 @@ from memory import (
     thread_config,
 )
 
-from agent_roles.graph import create_orchestrator_graph
+from observation import create_observed_orchestrator as create_orchestrator_graph
 from scripts.tools.sandbox_setup import create_session
 
 
