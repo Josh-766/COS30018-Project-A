@@ -14,6 +14,36 @@ from .terminal_use import WORKSPACE
 EXCLUDED = {'.git', '.venv', 'venv', 'node_modules', '__pycache__', '.ssh', '.aws',
             '.codex', '.agents', 'sandbox-output', '.pytest_cache'}
 
+# kubectl cp runs tar with an absolute pod path, so tar prints this warning
+# for every copy. It arrives on stdout, not stderr.
+TAR_NOISE = re.compile(r'^tar: Removing leading .+$')
+
+
+def _strip_tar_noise(stream):
+    if not stream:
+        return stream
+    is_text = isinstance(stream, str)
+    kept = [
+        line for line in stream.splitlines(keepends=True)
+        if not TAR_NOISE.match(
+            line.strip() if is_text else line.decode(errors='replace').strip()
+        )
+    ]
+    return (''.join(kept) if is_text else b''.join(kept))
+
+
+def _echo_stream(stream, target):
+    if not stream:
+        return
+    if isinstance(stream, str):
+        target.write(stream)
+    else:
+        buffer = getattr(target, 'buffer', None)
+        if buffer is None:
+            target.write(stream.decode(errors='replace'))
+        else:
+            buffer.write(stream)
+    target.flush()
 
 
 class Sandbox:
@@ -38,39 +68,27 @@ class Sandbox:
         )
     def _kubectl(self, arguments, **kwargs):
         command = ['kubectl', '--context', self.profile, '--namespace', self.namespace] + arguments
-        # prevents "tar" messages but other diagnostics will appear.
+        # kubectl cp writes tar's "Removing leading..." warnings to stdout.
+        # Filter those while leaving other commands and real diagnostics alone.
         if arguments and arguments[0] == 'cp' and not kwargs.get('capture_output'):
             check = kwargs.pop('check', False)
-            completed = subprocess.run(
-                command,
-                stderr=subprocess.PIPE,
-                check=False,
-                **kwargs,
-            )
-            stderr = completed.stderr
-            is_text = isinstance(stderr, str)
-            lines = stderr.splitlines(keepends=True) if stderr else []
-            kept = [
-                line for line in lines
-                if not re.match(
-                    r"^tar: Removing leading .+ from member names\s*$",
-                    line.decode(errors='replace').strip() if isinstance(line, bytes) else line.strip(),
-                )
-            ]
-            filtered_stderr = (''.join(kept) if is_text else b''.join(kept)) if stderr else stderr
-            if filtered_stderr:
-                if is_text:
-                    sys.stderr.write(filtered_stderr)
-                else:
-                    sys.stderr.buffer.write(filtered_stderr)
-                    sys.stderr.buffer.flush()
-            completed.stderr = filtered_stderr
+            kwargs.pop('capture_output', None)
+            kwargs.setdefault('stdout', subprocess.PIPE)
+            kwargs.setdefault('stderr', subprocess.PIPE)
+            completed = subprocess.run(command, check=False, **kwargs)
+
+            completed.stdout = _strip_tar_noise(completed.stdout)
+            completed.stderr = _strip_tar_noise(completed.stderr)
+
+            _echo_stream(completed.stdout, sys.stdout)
+            _echo_stream(completed.stderr, sys.stderr)
+
             if check and completed.returncode:
                 raise subprocess.CalledProcessError(
                     completed.returncode,
                     command,
                     output=completed.stdout,
-                    stderr=filtered_stderr,
+                    stderr=completed.stderr,
                 )
             return completed
         return subprocess.run(command, **kwargs)
