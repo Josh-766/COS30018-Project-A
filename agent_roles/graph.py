@@ -81,7 +81,8 @@ def create_coder_graph(*, checkpointer, store, sandbox, project: Path):
 
 
 def create_orchestrator_graph(
-    *, checkpointer, store, sandbox, project: Path, max_rework_attempts: int = 2
+    *, checkpointer, store, sandbox, project: Path, max_rework_attempts: int = 2,
+    on_event=None,
 ):
     # Plan, execute workers in order, review, and route bounded repair passes.
 
@@ -133,6 +134,7 @@ def create_orchestrator_graph(
             previous_results=state["work_history"],
             run_tool=tool_runner(runtime),
             review_feedback=state.get("review_feedback", ""),
+            on_event=on_event,
         )
         return {
             "task_results": state["task_results"] + [result],
@@ -147,6 +149,7 @@ def create_orchestrator_graph(
             state["work_history"],
             history=state["messages"],
             run_tool=tool_runner(runtime),
+            on_event=on_event,
         )
         return {
             "review": assessment,

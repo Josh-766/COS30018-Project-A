@@ -26,6 +26,7 @@ def review_work(
     *,
     history: list[dict[str, Any]],
     run_tool: Callable[[dict[str, Any]], str],
+    on_event: Callable[[dict[str, Any]], None] | None = None,
 ) -> dict[str, str]:
     payload = {
         "original_request": request,
@@ -42,6 +43,8 @@ def review_work(
         system_prompt=REVIEWER_PROMPT,
         model=os.getenv("OPENROUTER_REVIEWER_MODEL"),
         run_tool=run_tool,
+        on_event=on_event,
+        agent="reviewer",
         tool_definitions=[
             tool for tool in list_tools()
             if tool["function"]["name"] in {"run_command", "read_file", "list_files"}

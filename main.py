@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 from pathlib import Path
 from uuid import uuid4
 
@@ -49,6 +50,14 @@ def select_mode():
 
 
 def main():
+    # Avoid crashing on box-drawing/model-output characters when stdout is
+    # redirected or uses a legacy Windows code page.
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(errors="replace")
+        except (AttributeError, OSError):
+            pass
+
     project = set_project_path()
     if project is None:
         return
@@ -73,7 +82,8 @@ def main():
             else:
                 print("\nMulti-agent mode")
                 graph = create_orchestrator_graph(
-                    checkpointer=checkpointer, store=store, sandbox=sandbox, project=project
+                    checkpointer=checkpointer, store=store, sandbox=sandbox,
+                    project=project, on_event=show_agent_event,
                 )
             chat(graph, store, context, thread_id)
         finally:
@@ -180,6 +190,40 @@ def msg_preview(text: str, limit: int = 120):
     return first_line
 
 
+def reasoning_text(message: dict) -> str:
+    reasoning = message.get("reasoning")
+    if isinstance(reasoning, str) and reasoning.strip():
+        return reasoning
+    details = message.get("reasoning_details")
+    if isinstance(details, list):
+        return "\n".join(
+            item.get("text") for item in details
+            if isinstance(item, dict) and isinstance(item.get("text"), str)
+        )
+    return ""
+
+
+def show_agent_event(event: dict) -> None:
+    agent = str(event.get("agent", "agent")).title()
+    task_id = event.get("task_id")
+    label = f"{agent} [{task_id}]" if task_id else agent
+
+    if event.get("type") == "thinking":
+        text = (event.get("text") or "").strip()
+        if text:
+            print(f"\n{label} Thinking")
+            for line in text.splitlines():
+                print(f"│ {line}")
+    elif event.get("type") == "tool_call":
+        print(f"\n{label} Tool: {event.get('tool', '?')}")
+        for line in msg_preview(str(event.get("arguments", ""))).splitlines():
+            print(f"│ {line}")
+    elif event.get("type") == "tool_result":
+        print(f"\n{label} Tool Output")
+        for line in msg_preview(str(event.get("content", ""))).splitlines():
+            print(f"│ {line}")
+
+
 def show_step(data: dict):
 
     for message in data.get("messages", []):
@@ -187,12 +231,11 @@ def show_step(data: dict):
             continue
 
         # Reasoning (if the model returned it)
-        for key in ("reasoning"): #need to test the actual response mode better
-            reasoning = message.get(key)
-            if reasoning:
-                print(f"\nThinking")
-                for line in reasoning.strip().splitlines():
-                    print(f"{line}")
+        reasoning = reasoning_text(message)
+        if reasoning:
+            print("\nThinking")
+            for line in reasoning.strip().splitlines():
+                print(f"{line}")
 
         for toolcall in message.get("tool_calls") or []:
             func = toolcall.get("function", {})

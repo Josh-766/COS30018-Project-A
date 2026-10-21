@@ -6,12 +6,19 @@ TOOL = {
     "type": "function",
     "function": {
         "name": "list_files",
-        "description": "List a project directory.",
+        "description": (
+            "List a project directory. The path is relative to the project "
+            "root; use '.' for the root, not '/home/user/project'."
+        ),
         "parameters": {
             "type": "object",
             "properties": {
                 "path": {
-                    "type": "string"
+                    "type": "string",
+                    "description": (
+                        "Relative directory path inside the project, e.g. '.' "
+                        "or 'src'. Do not use an absolute path or '..'."
+                    )
                 }
             },
             "required": [

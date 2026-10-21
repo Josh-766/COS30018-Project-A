@@ -5,12 +5,20 @@ TOOL = {
     "type": "function",
     "function": {
         "name": "write_file",
-        "description": "Write a file, creating parent directories if needed.",
+        "description": (
+            "Write a project file, creating parent directories if needed. "
+            "The path is relative to the project root, e.g. 'src/app.py', "
+            "not '/home/user/project/src/app.py'."
+        ),
         "parameters": {
             "type": "object",
             "properties": {
                 "path": {
-                    "type": "string"
+                    "type": "string",
+                    "description": (
+                        "Relative path inside the project, e.g. 'src/app.py'. "
+                        "Do not use an absolute path or '..'."
+                    )
                 },
                 "content": {
                     "type": "string"

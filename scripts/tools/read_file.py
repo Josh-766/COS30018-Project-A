@@ -6,12 +6,19 @@ TOOL = {
     "type": "function",
     "function": {
         "name": "read_file",
-        "description": "Read a file.",
+        "description": (
+            "Read a project file. The path is relative to the project root, "
+            "e.g. 'calc.py', not '/home/user/project/calc.py'."
+        ),
         "parameters": {
             "type": "object",
             "properties": {
                 "path": {
-                    "type": "string"
+                    "type": "string",
+                    "description": (
+                        "Relative path inside the project, e.g. 'calc.py' or "
+                        "'src/app.py'. Do not use an absolute path or '..'."
+                    )
                 }
             },
             "required": [
