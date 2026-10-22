@@ -13,8 +13,10 @@ from memory import (
     thread_config,
 )
 
-from agent_roles.graph import create_coder_graph, create_orchestrator_graph
-from observation import create_observed_orchestrator as create_orchestrator_graph
+from observation import (
+    create_observed_coder_graph,
+    create_observed_orchestrator as create_orchestrator_graph,
+)
 from scripts.tools.sandbox_setup import create_session
 
 
@@ -77,7 +79,7 @@ def main():
         try:
             if mode == "single":
                 print("\nSingle-agent mode")
-                graph = create_coder_graph(
+                graph = create_observed_coder_graph(
                     checkpointer=checkpointer, store=store, sandbox=sandbox, project=project
                 )
             else:
@@ -164,13 +166,14 @@ def chat(graph, store, context: MemoryContext, thread_id: str):
                             print(f"  {index}. {task['title']}")
                     elif node == "execute_worker":
                         for result in data.get("task_results", [])[-1:]:
-                            print(f"\nWorker [{result['task_id']}]: {result['summary']}")
+                            print(f"\nWorker [{result['task_id']}] {result['status']}: {result['summary']}")
                     elif node == "reviewer":
                         review = data.get("review", {})
                         print(f"\nReview {review.get('status', 'ERROR')}: {review.get('feedback', '')}")
                     elif node == "finalize":
                         for message in data.get("messages", []):
-                            print(f"\nAgent: {message.get('content') or ''}")
+                            if message.get("content") and not message.get("tool_calls"):
+                                print(f"\nAgent: {message['content']}")
                     elif node == "coder":
                         show_step(data)
                     elif node == "tools":

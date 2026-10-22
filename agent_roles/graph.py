@@ -8,7 +8,7 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.runtime import Runtime
 
 from agent_roles.coder import send_to_coder
-from agent_roles.executor import execute_task
+from agent_roles.executor import AgentExecutionError, execute_task
 from agent_roles.planner import create_plan
 from agent_roles.reviewer import review_work
 from memory import MemoryContext
@@ -127,15 +127,28 @@ def create_orchestrator_graph(
     def execute_worker(state: WorkflowState, runtime: Runtime[MemoryContext]):
         index = state["task_index"]
         task_contract = state["active_tasks"][index]
-        result = execute_task(
-            task_contract,
-            request=state["request"],
-            history=state["messages"],
-            previous_results=state["work_history"],
-            run_tool=tool_runner(runtime),
-            review_feedback=state.get("review_feedback", ""),
-            on_event=on_event,
-        )
+        statuses = {item["task_id"]: item["status"] for item in state["task_results"]}
+        blocked = [
+            dependency for dependency in task_contract.get("depends_on", [])
+            if statuses.get(dependency) != "complete"
+        ]
+        if blocked:
+            result = {
+                "task_id": task_contract["id"],
+                "title": task_contract["title"],
+                "status": "skipped",
+                "summary": "Dependencies not complete: " + ", ".join(blocked),
+            }
+        else:
+            result = execute_task(
+                task_contract,
+                request=state["request"],
+                history=state["messages"],
+                previous_results=state["work_history"],
+                run_tool=tool_runner(runtime),
+                review_feedback=state.get("review_feedback", ""),
+                on_event=on_event,
+            )
         return {
             "task_results": state["task_results"] + [result],
             "work_history": state["work_history"] + [result],
@@ -143,14 +156,29 @@ def create_orchestrator_graph(
         }
 
     def reviewer(state: WorkflowState, runtime: Runtime[MemoryContext]):
-        assessment = review_work(
-            state["request"],
-            state["tasks"],
-            state["work_history"],
-            history=state["messages"],
-            run_tool=tool_runner(runtime),
-            on_event=on_event,
-        )
+        try:
+            assessment = review_work(
+                state["request"],
+                state["tasks"],
+                state["work_history"],
+                history=state["messages"],
+                run_tool=tool_runner(runtime),
+                on_event=on_event,
+            )
+        except (AgentExecutionError, ValueError) as error:
+            assessment = {"status": "FAIL", "feedback": f"Review failed: {error}", "summary": ""}
+        # Current-pass failures must not become a successful final result, even
+        # if the reviewer overlooks them. A later repair pass can resolve them.
+        unfinished = [item for item in state["task_results"] if item["status"] != "complete"]
+        if unfinished:
+            assessment = {
+                **assessment,
+                "status": "FAIL",
+                "feedback": assessment["feedback"] + "\nUnfinished tasks:\n" + "\n".join(
+                    f"{item['task_id']} ({item['status']}): {item['summary']}"
+                    for item in unfinished
+                ),
+            }
         return {
             "review": assessment,
             "review_attempt": state.get("review_attempt", 0) + 1,
@@ -164,6 +192,7 @@ def create_orchestrator_graph(
             "title": "Address reviewer findings",
             "description": (
                 "Inspect and fix the reviewer findings below. Preserve completed work, "
+                "finish any failed, incomplete or skipped tasks from the original request, "
                 "then run the requested focused checks.\n\n" + state["review_feedback"]
             ),
             "depends_on": [],
