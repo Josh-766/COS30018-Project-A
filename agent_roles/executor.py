@@ -54,6 +54,9 @@ def run_agent(
         system_prompt=system_prompt,
         tool_definitions=tool_definitions,
     )
+    # Keep the role's task contract after a skill read (and all other tool calls).
+    # send_to_coder builds its own request list; it does not mutate this history.
+    context.append({"role": "user", "content": prompt})
 
     total_tool_count = 0
     for _ in range(max_rounds):
@@ -103,6 +106,7 @@ def execute_task(
     run_tool: Callable[[dict[str, Any]], str],
     review_feedback: str = "",
     on_event: Callable[[dict[str, Any]], None] | None = None,
+    skill_catalog: str = "",
 ) -> dict[str, Any]:
     # Execute one task contract and return a compact result for the blackboard.
     model = os.getenv("OPENROUTER_EXECUTOR_MODEL")
@@ -120,7 +124,7 @@ def execute_task(
     result = run_agent(
         json.dumps(prompt, ensure_ascii=False),
         history=history,
-        system_prompt=EXECUTOR_PROMPT,
+        system_prompt=EXECUTOR_PROMPT + skill_catalog,
         model=model,
         run_tool=run_tool,
         on_event=on_event,

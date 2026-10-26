@@ -7,7 +7,8 @@ from langgraph.func import task
 from langgraph.graph import END, START, StateGraph
 from langgraph.runtime import Runtime
 
-from agent_roles.coder import send_to_coder
+from agent_roles.coder import SYSTEM_PROMPT, send_to_coder
+from skill_library import SkillLibrary
 from agent_roles.executor import execute_task
 from agent_roles.planner import create_plan
 from agent_roles.reviewer import review_work
@@ -37,8 +38,10 @@ class WorkflowState(TypedDict, total=False):
     review: dict[str, str]
 
 
-def create_coder_graph(*, checkpointer, store, sandbox, project: Path):
+def create_coder_graph(*, checkpointer, store, sandbox, project: Path, skills=None):
     # Compile once per sandbox; invoke with a scoped thread config and context.
+
+    skills = skills if skills is not None else SkillLibrary(project)
 
     @task
     def run_tool(tool_call, memory_context):
@@ -49,10 +52,12 @@ def create_coder_graph(*, checkpointer, store, sandbox, project: Path):
             sandbox=sandbox,
             store=get_store(),
             memory_context=memory_context,
+            skills=skills,
         )
 
     def coder(state: CoderState):
-        result = send_to_coder(None, context=state["messages"])
+        result = send_to_coder(None, context=state["messages"],
+                               system_prompt=SYSTEM_PROMPT + skills.catalog_prompt())
         return {"messages": [result["message"]]}
 
     def tools(state: CoderState, runtime: Runtime[MemoryContext]):
@@ -82,9 +87,11 @@ def create_coder_graph(*, checkpointer, store, sandbox, project: Path):
 
 def create_orchestrator_graph(
     *, checkpointer, store, sandbox, project: Path, max_rework_attempts: int = 2,
-    on_event=None,
+    on_event=None, skills=None,
 ):
     # Plan, execute workers in order, review, and route bounded repair passes.
+
+    skills = skills if skills is not None else SkillLibrary(project)
 
     @task
     def run_tool(tool_call, memory_context):
@@ -94,6 +101,7 @@ def create_orchestrator_graph(
             sandbox=sandbox,
             store=get_store(),
             memory_context=memory_context,
+            skills=skills,
         )
 
     def tool_runner(runtime: Runtime[MemoryContext]):
@@ -110,7 +118,7 @@ def create_orchestrator_graph(
              if message.get("role") == "user"),
             "",
         )
-        plan = create_plan(request, state["messages"])
+        plan = create_plan(request, state["messages"], skill_catalog=skills.catalog_prompt())
         return {
             "request": request,
             "plan_summary": plan["summary"],
@@ -135,6 +143,7 @@ def create_orchestrator_graph(
             run_tool=tool_runner(runtime),
             review_feedback=state.get("review_feedback", ""),
             on_event=on_event,
+            skill_catalog=skills.catalog_prompt(),
         )
         return {
             "task_results": state["task_results"] + [result],
@@ -150,6 +159,7 @@ def create_orchestrator_graph(
             history=state["messages"],
             run_tool=tool_runner(runtime),
             on_event=on_event,
+            skill_catalog=skills.catalog_prompt(),
         )
         return {
             "review": assessment,

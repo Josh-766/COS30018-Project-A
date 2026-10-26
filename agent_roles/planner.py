@@ -13,6 +13,13 @@ not invent files or claim work has already happened. A single task is best for
 small requests. For questions that need no project edits or inspection, return
 an empty tasks list and put a direct answer in summary.
 
+Available skills are routing metadata, not evidence that a skill has been read.
+When a skill fits a task, include its name and ask the worker to read it in that
+task's description before coding. Preserve any skill explicitly requested by the
+user (including $skill-name). You have no tools; delegate requests to inspect skill
+contents to a worker instead of inventing their contents. For UI design tasks,
+include frontend-design when it is available in the catalog.
+
 Return only a JSON object with this shape:
 {
   "summary": "brief plan or direct answer",
@@ -34,9 +41,9 @@ def _text_messages(history: list[dict[str, Any]]) -> list[dict[str, str]]:
     return result
 
 
-def create_plan(request: str, history: list[dict[str, Any]]) -> dict[str, Any]:
+def create_plan(request: str, history: list[dict[str, Any]], *, skill_catalog: str = "") -> dict[str, Any]:
     """Ask the planner for a validated, bounded task list."""
-    messages = [{"role": "system", "content": PLANNER_PROMPT}]
+    messages = [{"role": "system", "content": PLANNER_PROMPT + skill_catalog}]
     messages.extend(_text_messages(history))
     # Ensure the exact current request is present even if a long history was trimmed.
     if not messages or messages[-1].get("content") != request:

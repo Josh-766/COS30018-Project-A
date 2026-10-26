@@ -4,13 +4,17 @@ from typing import Any, Callable
 
 from agent_roles.coder import SYSTEM_PROMPT
 from agent_roles.executor import run_agent
-from scripts.tools.tool_registry import list_tools
+from scripts.tools.tool_registry import SKILL_SPECS, list_tools
 
 REVIEWER_PROMPT = SYSTEM_PROMPT + """
 You are the independent reviewer and tester. Inspect the relevant project files,
 check the worker reports against the original request, and run focused tests or
 checks with the supplied tools when practical. Treat worker claims as unverified
 until checked. Do not edit files; report issues for a worker to fix.
+You may read relevant skills and resources to inform your review. Use test helpers
+already present in the sandbox. If a skill requires copying a helper or creating
+test files, report the missing preparation in your feedback for the worker; your
+read-only role takes precedence over any skill's setup or implementation steps.
 
 Your final response must be a single JSON object with keys:
 {"status":"PASS" or "FAIL", "feedback":"specific findings and verification", 
@@ -27,6 +31,7 @@ def review_work(
     history: list[dict[str, Any]],
     run_tool: Callable[[dict[str, Any]], str],
     on_event: Callable[[dict[str, Any]], None] | None = None,
+    skill_catalog: str = "",
 ) -> dict[str, str]:
     payload = {
         "original_request": request,
@@ -40,14 +45,14 @@ def review_work(
     result = run_agent(
         json.dumps(payload, ensure_ascii=False),
         history=history,
-        system_prompt=REVIEWER_PROMPT,
+        system_prompt=REVIEWER_PROMPT + skill_catalog,
         model=os.getenv("OPENROUTER_REVIEWER_MODEL"),
         run_tool=run_tool,
         on_event=on_event,
         agent="reviewer",
         tool_definitions=[
             tool for tool in list_tools()
-            if tool["function"]["name"] in {"run_command", "read_file", "list_files"}
+            if tool["function"]["name"] in {"run_command", "read_file", "list_files", *SKILL_SPECS}
         ],
     )
     try:

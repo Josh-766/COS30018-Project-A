@@ -16,6 +16,7 @@ from memory import (
 from agent_roles.graph import create_coder_graph, create_orchestrator_graph
 from observation import create_observed_orchestrator as create_orchestrator_graph
 from scripts.tools.sandbox_setup import create_session
+from skill_library import SkillLibrary
 
 
 def set_project_path():
@@ -72,21 +73,23 @@ def main():
         user_id=os.getenv("MEMORY_USER_ID") or "default",
     )
     thread_id = os.getenv("MEMORY_THREAD_ID") or uuid4().hex
+    skills = SkillLibrary(project)
     with open_memory() as (checkpointer, store):
         sandbox = create_session(project)
         try:
             if mode == "single":
                 print("\nSingle-agent mode")
                 graph = create_coder_graph(
-                    checkpointer=checkpointer, store=store, sandbox=sandbox, project=project
+                    checkpointer=checkpointer, store=store, sandbox=sandbox, project=project,
+                    skills=skills,
                 )
             else:
                 print("\nMulti-agent mode")
                 graph = create_orchestrator_graph(
                     checkpointer=checkpointer, store=store, sandbox=sandbox,
-                    project=project, on_event=show_agent_event,
+                    project=project, on_event=show_agent_event, skills=skills,
                 )
-            chat(graph, store, context, thread_id)
+            chat(graph, store, context, thread_id, skills=skills)
         finally:
             try:
                 sandbox.save_to_host(project)
@@ -94,12 +97,14 @@ def main():
                 sandbox.terminate()
 
 
-def chat(graph, store, context: MemoryContext, thread_id: str):
+def chat(graph, store, context: MemoryContext, thread_id: str, *, skills=None):
     # Send only new messages; LangGraph loads previous messages by thread ID.
     print(f"Thread: {thread_id}")
     print("Type 'exit' or 'quit' to stop.")
     print("Memory: /remember <fact>, /memories, /forget <id>")
+    print("Skills: /skills, /skill <name>")
     print("Conversation: /new, /resume <thread-id>, /retry")
+    skills = skills if skills is not None else SkillLibrary()
 
     while True:
         try:
@@ -118,6 +123,28 @@ def chat(graph, store, context: MemoryContext, thread_id: str):
         if text.startswith("/resume "):
             thread_id = text.removeprefix("/resume ").strip()
             print(f"Thread: {thread_id}")
+            continue
+
+        if text == "/skills":
+            catalog = skills.list_skills()
+            if not catalog["skills"]:
+                print("\nSkills: no available skills")
+            for skill in catalog["skills"]:
+                print(f"\n{skill['name']} [{skill['source']}]: {skill['description']}")
+            for error in catalog["errors"]:
+                print(f"\nSkill skipped [{error['source']}/{error.get('name', '')}]: {error['error']}")
+            continue
+        if text == "/skill" or text.startswith("/skill "):
+            name = text.removeprefix("/skill").strip()
+            try:
+                if not name:
+                    raise ValueError("Usage: /skill <name>. Use /skills to list names.")
+                skill = skills.read_skill(name)
+                print(f"\n{skill['content']}")
+                if skill["resources"]:
+                    print("\nResources: " + ", ".join(skill["resources"]))
+            except (OSError, ValueError) as error:
+                print(f"\nSkill: {error}")
             continue
 
         try:
@@ -143,7 +170,7 @@ def chat(graph, store, context: MemoryContext, thread_id: str):
 
         if text.startswith("/") and text != "/retry":
             print("Unknown command. Use /remember <fact>, /memories, /forget <id>, "
-                  "/new, /resume <thread-id>, or /retry.")
+                  "/skills, /skill <name>, /new, /resume <thread-id>, or /retry.")
             continue
 
         config = thread_config(context, thread_id)
