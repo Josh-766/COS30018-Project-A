@@ -4,13 +4,35 @@ from typing import Any, Callable
 
 from agent_roles.coder import SYSTEM_PROMPT, send_to_coder
 
-MAX_AGENT_ROUNDS = 50
+MAX_AGENT_ROUNDS = 100
 
-EXECUTOR_PROMPT = SYSTEM_PROMPT + """
-You are a worker assigned one task by the project orchestrator. Complete only
+
+class AgentExecutionError(RuntimeError):
+    """A model call failed or the agent exhausted its action budget."""
+
+
+EXECUTOR_PROMPT =  """
+You are a coding worker agent assigned one task by the project orchestrator. Complete only
 that task, respect its file scope and dependencies, use tools to inspect and
-change the project, and report what you actually changed. Do not claim tests
-passed unless you ran them and saw a successful result."""
+change the project, and report what you actually changed. Keep changes focused on your task. Don't run or write excessive tests. Be efficient with tool calls to complete the task.
+
+Verification policy:
+- Use only tools and packages already present in the sandbox.
+- Never run pip/npm/apt installs, download browsers, or fetch system packages.
+- If a check needs something unavailable, skip it and report it as a blocker.
+- Run at most one focused check after each edit. Do not rerun a check that
+  already passed unless you changed the code it covers.
+- Prefer the task's listed checks. If none are listed, use the smallest
+  syntax/import check for the files you changed.
+- Batch related checks into one command, and keep commands under 30 seconds.
+
+If you have learnings that are core for the next worker you can write them to a project_learnings.md file so the next worker/workers can find them. 
+
+Return your final response as a JSON object without markdown, with keys:
+{"status": "complete" or "incomplete" or "failed", "summary": "changes, checks
+actually run, and remaining blockers"}.
+Use incomplete when work remains, failed when you cannot perform the task, and
+complete only when the assigned task is finished."""
 
 
 def _emit(on_event, **event):
@@ -47,19 +69,22 @@ def run_agent(
 ) -> dict[str, Any]:
     # Run one tool-capable role until it returns a final answer.
     context = [dict(message) for message in history]
-    result = send_to_coder(
-        prompt,
-        context=context,
-        model=model,
-        system_prompt=system_prompt,
-        tool_definitions=tool_definitions,
-    )
+    try:
+        result = send_to_coder(
+            prompt,
+            context=context,
+            model=model,
+            system_prompt=system_prompt,
+            tool_definitions=tool_definitions,
+        )
+    except Exception as error:
+        raise AgentExecutionError(f"Model call failed: {error}") from error
     # Keep the role's task contract after a skill read (and all other tool calls).
     # send_to_coder builds its own request list; it does not mutate this history.
     context.append({"role": "user", "content": prompt})
 
     total_tool_count = 0
-    for _ in range(max_rounds):
+    for round_index in range(max_rounds + 1):
         message = result.get("message", {})
         thinking = _reasoning_text(message)
         if thinking:
@@ -68,7 +93,10 @@ def run_agent(
 
         tool_calls = result.get("tool_calls", [])
         if not tool_calls:
-            return {"text": result.get("text", ""), "tool_count": total_tool_count}
+            return {"text": result.get("text", ""), "tool_count": total_tool_count,
+                    "context": context}
+        if round_index == max_rounds:
+            break
 
         context.append(dict(message))
         for call in tool_calls:
@@ -86,15 +114,19 @@ def run_agent(
             _emit(on_event, agent=agent, task_id=task_id,
                   type="tool_result", tool=name, content=output)
             total_tool_count += 1
-        result = send_to_coder(
-            None,
-            context=context,
-            model=model,
-            system_prompt=system_prompt,
-            tool_definitions=tool_definitions,
-        )
 
-    raise RuntimeError(f"Agent exceeded its {max_rounds}-round tool limit.")
+        try:
+            result = send_to_coder(
+                None,
+                context=context,
+                model=model,
+                system_prompt=system_prompt,
+                tool_definitions=tool_definitions,
+            )
+        except Exception as error:
+            raise AgentExecutionError(f"Model call failed: {error}") from error
+
+    raise AgentExecutionError(f"Agent exceeded its {max_rounds}-round tool limit.")
 
 
 def execute_task(
@@ -121,19 +153,89 @@ def execute_task(
             "earlier task results. Run focused verification if practical and report exact outcomes."
         ),
     }
-    result = run_agent(
-        json.dumps(prompt, ensure_ascii=False),
-        history=history,
-        system_prompt=EXECUTOR_PROMPT + skill_catalog,
-        model=model,
-        run_tool=run_tool,
-        on_event=on_event,
+    _emit(
+        on_event,
         agent="worker",
         task_id=task["id"],
+        type="task_start",
+        title=task.get("title", ""),
+        description=task.get("description", ""),
+        files=task.get("files", []),
+        depends_on=task.get("depends_on", []),
+        context=task.get("context", []),
     )
+    try:
+        result = run_agent(
+            json.dumps(prompt, ensure_ascii=False),
+            history=history,
+            system_prompt=EXECUTOR_PROMPT + skill_catalog,
+            model=model,
+            run_tool=run_tool,
+            on_event=on_event,
+            agent="worker",
+            task_id=task["id"],
+        )
+    except AgentExecutionError as error:
+        report = {"status": "failed", "summary": str(error)}
+    else:
+        text = result.get("text", "")
+        context = result.get("context") or history
+        report = None
+        for attempt in range(2):
+            try:
+                start = (text or "").find("{")
+                if start < 0:
+                    raise ValueError("No task report found")
+                parsed, _ = json.JSONDecoder().raw_decode(text[start:])
+                if (
+                    not isinstance(parsed, dict)
+                    or parsed.get("status") not in {"complete", "incomplete", "failed"}
+                    or not isinstance(parsed.get("summary"), str)
+                    or not parsed["summary"].strip()
+                ):
+                    raise ValueError("Invalid task report")
+                report = {"status": parsed["status"], "summary": parsed["summary"]}
+                break
+            except (TypeError, ValueError):
+                if attempt:
+                    break
+                correction = (
+                    "Your previous response was:\n"
+                    + (text or "")[:4000]
+                    + "\n\nThat response did not contain a valid task report. "
+                    "Return only a JSON object with exactly these keys: "
+                    '{"status": "complete", "summary": "changes, checks actually run, '
+                    'and remaining blockers"}. The status must be one of "complete", '
+                    '"incomplete", or "failed". Use complete only when the task is '
+                    "finished, incomplete when work remains, and failed when you could "
+                    "not perform the task. Do not use markdown or code fences."
+                )
+                try:
+                    corrected = send_to_coder(
+                        correction,
+                        context=context,
+                        model=model,
+                        system_prompt=EXECUTOR_PROMPT + skill_catalog,
+                        tool_definitions=[],
+                    )
+                    text = corrected.get("text", "")
+                except Exception as error:
+                    report = {
+                        "status": "incomplete",
+                        "summary": (
+                            "Worker returned an invalid task report and the report "
+                            "retry failed: " + str(error)
+                        ),
+                    }
+                    break
+        if report is None:
+            report = {
+                "status": "incomplete",
+                "summary": "Worker returned an invalid task report: " + str(text),
+            }
     return {
         "task_id": task["id"],
         "title": task["title"],
-        "status": "complete",
-        "summary": result["text"],
+        "status": report["status"],
+        "summary": report["summary"],
     }

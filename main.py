@@ -13,8 +13,10 @@ from memory import (
     thread_config,
 )
 
-from agent_roles.graph import create_coder_graph, create_orchestrator_graph
-from observation import create_observed_orchestrator as create_orchestrator_graph
+from observation import (
+    create_observed_coder_graph,
+    create_observed_orchestrator as create_orchestrator_graph,
+)
 from scripts.tools.sandbox_setup import create_session
 from skill_library import SkillLibrary
 
@@ -79,9 +81,9 @@ def main():
         try:
             if mode == "single":
                 print("\nSingle-agent mode")
-                graph = create_coder_graph(
-                    checkpointer=checkpointer, store=store, sandbox=sandbox, project=project,
-                    skills=skills,
+                graph = create_observed_coder_graph(
+                    checkpointer=checkpointer, store=store, sandbox=sandbox,
+                    project=project, skills=skills,
                 )
             else:
                 print("\nMulti-agent mode")
@@ -191,13 +193,14 @@ def chat(graph, store, context: MemoryContext, thread_id: str, *, skills=None):
                             print(f"  {index}. {task['title']}")
                     elif node == "execute_worker":
                         for result in data.get("task_results", [])[-1:]:
-                            print(f"\nWorker [{result['task_id']}]: {result['summary']}")
+                            print(f"\nWorker [{result['task_id']}] {result['status']}: {result['summary']}")
                     elif node == "reviewer":
                         review = data.get("review", {})
                         print(f"\nReview {review.get('status', 'ERROR')}: {review.get('feedback', '')}")
                     elif node == "finalize":
                         for message in data.get("messages", []):
-                            print(f"\nAgent: {message.get('content') or ''}")
+                            if message.get("content") and not message.get("tool_calls"):
+                                print(f"\nAgent: {message['content']}")
                     elif node == "coder":
                         show_step(data)
                     elif node == "tools":
@@ -231,17 +234,41 @@ def reasoning_text(message: dict) -> str:
     return ""
 
 
+def thinking_preview(text: str, limit: int = 70) -> str:
+    words = text.split()
+    preview = " ".join(words[:limit])
+    if len(words) > limit:
+        preview += " ..."
+    return preview
+
+
 def show_agent_event(event: dict) -> None:
     agent = str(event.get("agent", "agent")).title()
     task_id = event.get("task_id")
     label = f"{agent} [{task_id}]" if task_id else agent
 
-    if event.get("type") == "thinking":
+    if event.get("type") == "task_start":
+        print(f"\n{label} Task: {event.get('title', '')}")
+        description = (event.get("description") or "").strip()
+        if description:
+            for line in description.splitlines():
+                print(f"│ {line}")
+        files = event.get("files") or []
+        if files:
+            print(f"│ Files: {', '.join(str(item) for item in files)}")
+        depends_on = event.get("depends_on") or []
+        if depends_on:
+            print(f"│ Depends on: {', '.join(str(item) for item in depends_on)}")
+        context = event.get("context") or []
+        if context:
+            print("│ Context:")
+            for item in context:
+                print(f"│ - {item}")
+    elif event.get("type") == "thinking":
         text = (event.get("text") or "").strip()
         if text:
             print(f"\n{label} Thinking")
-            for line in text.splitlines():
-                print(f"│ {line}")
+            print(f"│ {thinking_preview(text)}")
     elif event.get("type") == "tool_call":
         print(f"\n{label} Tool: {event.get('tool', '?')}")
         for line in msg_preview(str(event.get("arguments", ""))).splitlines():
@@ -262,8 +289,7 @@ def show_step(data: dict):
         reasoning = reasoning_text(message)
         if reasoning:
             print("\nThinking")
-            for line in reasoning.strip().splitlines():
-                print(f"{line}")
+            print(f"│ {thinking_preview(reasoning)}")
 
         for toolcall in message.get("tool_calls") or []:
             func = toolcall.get("function", {})

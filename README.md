@@ -30,6 +30,20 @@ python main.py
 
 Select the project directory when prompted. The harness starts Minikube, copies the project into its sandbox, and saves sandbox changes back to the selected directory.
 
+## Workflow and recovery
+
+LangGraph coordinates the planner, workers, reviewer, and up to two repair passes.
+Each worker reports `complete`, `incomplete`, or `failed` with a summary; invalid
+reports count as incomplete. Dependent tasks are skipped when their prerequisites
+are unfinished, while independent tasks can continue. The reviewer checks the
+combined result, and unfinished tasks or reviewer errors enter the bounded repair
+path. The CLI displays worker statuses, review feedback, and the final result.
+
+Worker model errors and exhausted tool budgets become failed task reports.
+Planner errors and infrastructure errors (such as host synchronization failures)
+leave a pending LangGraph checkpoint for `/retry`. Assignment prompts remain in
+the worker/reviewer history across tool calls.
+
 ## Memory
 
 Short-term memory is conversation history persisted by LangGraph's `SqliteSaver`. Long-term memory consists of selected facts in its native `SqliteStore`, shared across conversations for the same project and user. The agent can call `search_memories`, `save_memory`, and `forget_memory` as needed.

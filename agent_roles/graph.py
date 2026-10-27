@@ -8,8 +8,8 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.runtime import Runtime
 
 from agent_roles.coder import SYSTEM_PROMPT, send_to_coder
+from agent_roles.executor import AgentExecutionError, execute_task
 from skill_library import SkillLibrary
-from agent_roles.executor import execute_task
 from agent_roles.planner import create_plan
 from agent_roles.reviewer import review_work
 from memory import MemoryContext
@@ -36,6 +36,7 @@ class WorkflowState(TypedDict, total=False):
     review_attempt: int
     review_feedback: str
     review: dict[str, str]
+    review_context: list[str]
 
 
 def create_coder_graph(*, checkpointer, store, sandbox, project: Path, skills=None):
@@ -112,13 +113,18 @@ def create_orchestrator_graph(
             return output
         return call
 
-    def planner(state: WorkflowState):
+    def planner(state: WorkflowState, runtime: Runtime[MemoryContext]):
         request = next(
             (message.get("content", "") for message in reversed(state["messages"])
              if message.get("role") == "user"),
             "",
         )
-        plan = create_plan(request, state["messages"], skill_catalog=skills.catalog_prompt())
+        plan = create_plan(
+            request,
+            state["messages"],
+            run_tool=tool_runner(runtime),
+            skill_catalog=skills.catalog_prompt(),
+        )
         return {
             "request": request,
             "plan_summary": plan["summary"],
@@ -130,21 +136,45 @@ def create_orchestrator_graph(
             "review_attempt": 0,
             "review_feedback": "",
             "review": {},
+            "review_context": plan.get("review_context", []),
         }
 
     def execute_worker(state: WorkflowState, runtime: Runtime[MemoryContext]):
         index = state["task_index"]
         task_contract = state["active_tasks"][index]
-        result = execute_task(
-            task_contract,
-            request=state["request"],
-            history=state["messages"],
-            previous_results=state["work_history"],
-            run_tool=tool_runner(runtime),
-            review_feedback=state.get("review_feedback", ""),
-            on_event=on_event,
-            skill_catalog=skills.catalog_prompt(),
-        )
+        statuses = {item["task_id"]: item["status"] for item in state["task_results"]}
+        blocked = [
+            dependency for dependency in task_contract.get("depends_on", [])
+            if statuses.get(dependency) != "complete"
+        ]
+        if blocked:
+            result = {
+                "task_id": task_contract["id"],
+                "title": task_contract["title"],
+                "status": "skipped",
+                "summary": "Dependencies not complete: " + ", ".join(blocked),
+            }
+        else:
+            # Workers see only the planner's curated context, not the whole thread.
+            curated = task_contract.get("context", [])
+            if curated:
+                executor_history = [{
+                    "role": "system",
+                    "content": "Task context from the planner:\n" + "\n".join(curated),
+                }]
+            else:
+                executor_history = []
+
+            result = execute_task(
+                task_contract,
+                request=state["request"],
+                history=executor_history,
+                previous_results=state["work_history"],
+                run_tool=tool_runner(runtime),
+                review_feedback=state.get("review_feedback", ""),
+                on_event=on_event,
+                skill_catalog=skills.catalog_prompt(),
+            )
         return {
             "task_results": state["task_results"] + [result],
             "work_history": state["work_history"] + [result],
@@ -152,15 +182,40 @@ def create_orchestrator_graph(
         }
 
     def reviewer(state: WorkflowState, runtime: Runtime[MemoryContext]):
-        assessment = review_work(
-            state["request"],
-            state["tasks"],
-            state["work_history"],
-            history=state["messages"],
-            run_tool=tool_runner(runtime),
-            on_event=on_event,
-            skill_catalog=skills.catalog_prompt(),
-        )
+        # Use curated review context from the planner, not the full conversation.
+        review_ctx = state.get("review_context", [])
+        if review_ctx:
+            reviewer_history = [{
+                "role": "system",
+                "content": "Project context from the planner:\n" + "\n".join(review_ctx),
+            }]
+        else:
+            reviewer_history = []
+
+        try:
+            assessment = review_work(
+                state["request"],
+                state["tasks"],
+                state["work_history"],
+                history=reviewer_history,
+                run_tool=tool_runner(runtime),
+                on_event=on_event,
+                skill_catalog=skills.catalog_prompt(),
+            )
+        except (AgentExecutionError, ValueError) as error:
+            assessment = {"status": "FAIL", "feedback": f"Review failed: {error}", "summary": ""}
+        # Current-pass failures must not become a successful final result, even
+        # if the reviewer overlooks them. A later repair pass can resolve them.
+        unfinished = [item for item in state["task_results"] if item["status"] != "complete"]
+        if unfinished:
+            assessment = {
+                **assessment,
+                "status": "FAIL",
+                "feedback": assessment["feedback"] + "\nUnfinished tasks:\n" + "\n".join(
+                    f"{item['task_id']} ({item['status']}): {item['summary']}"
+                    for item in unfinished
+                ),
+            }
         return {
             "review": assessment,
             "review_attempt": state.get("review_attempt", 0) + 1,
@@ -174,10 +229,13 @@ def create_orchestrator_graph(
             "title": "Address reviewer findings",
             "description": (
                 "Inspect and fix the reviewer findings below. Preserve completed work, "
+                "finish any failed, incomplete or skipped tasks from the original request, "
                 "then run the requested focused checks.\n\n" + state["review_feedback"]
             ),
             "depends_on": [],
             "files": [],
+            # Repair workers get the same curated project context as normal tasks.
+            "context": state.get("review_context", []),
         }
         return {"active_tasks": [task], "task_results": [], "task_index": 0}
 

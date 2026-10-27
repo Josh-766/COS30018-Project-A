@@ -26,6 +26,7 @@ from observation import (
     uninstall,
 )
 from observation.observation import NUDGE_AFTER, NUDGE_NOTE, STOP_AFTER, _add_error_detail
+from agent_roles.executor import MAX_AGENT_ROUNDS
 from scripts.tools.tool_registry import execute_tool
 
 WORKSPACE = "/home/user/project"
@@ -68,6 +69,10 @@ def text(content):
 
 def review(status, feedback="checked"):
     return text(json.dumps({"status": status, "feedback": feedback, "summary": f"Review {status}"}))
+
+
+def worker_done(status="complete", summary="Done."):
+    return text(json.dumps({"status": status, "summary": summary}))
 
 
 class FakeModel:
@@ -205,7 +210,7 @@ class OrchestratorTest(GraphTestBase):
             tools(tests_call("w1")),
             tools(call("write_file", FIX, "w2")),
             tools(tests_call("w3")),
-            text("Fixed add; tests pass."),
+            worker_done(summary="Fixed add; tests pass."),
             tools(tests_call("r1")),
             review("PASS"),
         ])
@@ -242,7 +247,7 @@ class OrchestratorTest(GraphTestBase):
             review("FAIL", "add still subtracts"),
             # Rework worker fixes it, reviewer passes.
             tools(call("write_file", FIX, "f1")),
-            text("Fixed."),
+            worker_done(),
             review("PASS"),
         ])
         self.assertEqual(result["review"]["status"], "PASS")
@@ -264,9 +269,12 @@ class OrchestratorTest(GraphTestBase):
         self.assertEqual(report["task_recovery_rate"], 1.0)
 
     def test_round_limit_becomes_a_failed_task(self) -> None:
-        echoes = [tools(call("run_command", {"command": f"echo {i}"}, f"e{i}")) for i in range(13)]
+        echoes = [
+            tools(call("run_command", {"command": f"echo {i}"}, f"e{i}"))
+            for i in range(MAX_AGENT_ROUNDS + 1)
+        ]
         result, _ = self.run_orchestrator(plan(("task-1", "Loop")), echoes + [
-            review("FAIL", "nothing done"), tools(call("write_file", FIX, "f1")), text("Fixed."), review("PASS"),
+            review("FAIL", "nothing done"), tools(call("write_file", FIX, "f1")), worker_done(), review("PASS"),
         ])
         self.assertEqual(result["work_history"][0]["status"], "failed")
         self.assertIn("round tool limit", result["work_history"][0]["summary"])
@@ -274,9 +282,9 @@ class OrchestratorTest(GraphTestBase):
     def test_stuck_reviewer_becomes_a_fail_review(self) -> None:
         stuck = [tools(call("read_file", {"path": "nope.py"}, f"r{i}")) for i in range(STOP_AFTER)]
         result, _ = self.run_orchestrator(plan(("task-1", "Fix add")), [
-            tools(call("write_file", FIX, "w1")), text("Done."),
+            tools(call("write_file", FIX, "w1")), worker_done(),
         ] + stuck + [
-            tools(call("write_file", FIX, "w2")), text("Done again."), review("PASS"),
+            tools(call("write_file", FIX, "w2")), worker_done(), review("PASS"),
         ])
         events = self.events()
         reviews = [e for e in events if e["event"] == "review"]
@@ -294,7 +302,7 @@ class OrchestratorTest(GraphTestBase):
         from contextlib import redirect_stdout
         from io import StringIO
         from main import chat
-        model = FakeModel([tools(call("write_file", FIX, "w1")), text("Fixed."), review("PASS")])
+        model = FakeModel([tools(call("write_file", FIX, "w1")), worker_done(), review("PASS")])
         output = StringIO()
         with open_memory(self.root / "memory.db") as (checkpointer, store):
             graph = create_observed_orchestrator(checkpointer=checkpointer, store=store, sandbox=self.sandbox,
