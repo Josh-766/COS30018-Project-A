@@ -20,12 +20,11 @@ You have read-only project and memory tools; use them when inspection is needed.
 Available skills are routing metadata, not evidence that a skill has been read.
 When a skill fits a task, include its name in that task's description and context,
 and ask the worker to read it before coding. Preserve any skill explicitly
-requested by the user (including $skill-name). Do not read skill files yourself
-and do not invent their contents; the worker must read the skill. For UI design
+requested by the user (including $skill-name). For UI design
 tasks, include frontend-design when it is available in the catalog.
 
 For each task, include a "context" array with specific, concise facts the worker
-needs. Be thorough: the worker sees only this task contract and context, not the
+needs. Be clear: the worker sees only this task contract and context, not the
 conversation history. Also include a top-level "review_context" array with the key
 requirements for the reviewer.
 

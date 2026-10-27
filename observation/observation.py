@@ -35,7 +35,7 @@ from scripts.tools.tool_registry import SPECS
 # Settings if you want to change them
 
 
-DEFAULT_TRACE_DIR = Path.home() / ".local/share/cos30018/traces"
+DEFAULT_TRACE_DIR = Path(r"C:\Users\Seth\Desktop\COS30018\COS30018-Project-A\traces")
 
 # how many errors, before the agent is told to change approach
 NUDGE_AFTER = 3
