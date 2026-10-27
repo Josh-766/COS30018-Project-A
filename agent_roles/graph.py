@@ -35,6 +35,7 @@ class WorkflowState(TypedDict, total=False):
     review_attempt: int
     review_feedback: str
     review: dict[str, str]
+    review_context: list[str]
 
 
 def create_coder_graph(*, checkpointer, store, sandbox, project: Path):
@@ -104,13 +105,19 @@ def create_orchestrator_graph(
             return output
         return call
 
-    def planner(state: WorkflowState):
+    def planner(state: WorkflowState, runtime: Runtime[MemoryContext]):
         request = next(
             (message.get("content", "") for message in reversed(state["messages"])
              if message.get("role") == "user"),
             "",
         )
-        plan = create_plan(request, state["messages"])
+        
+        plan = create_plan(
+            request,
+            state["messages"],
+            #added tool calling capacity to the 
+            run_tool=tool_runner(runtime),
+        )
         return {
             "request": request,
             "plan_summary": plan["summary"],
@@ -122,6 +129,7 @@ def create_orchestrator_graph(
             "review_attempt": 0,
             "review_feedback": "",
             "review": {},
+            "review_context": plan.get("review_context", []),
         }
 
     def execute_worker(state: WorkflowState, runtime: Runtime[MemoryContext]):
@@ -140,10 +148,20 @@ def create_orchestrator_graph(
                 "summary": "Dependencies not complete: " + ", ".join(blocked),
             }
         else:
+            #limited the context given to the executor to the planners context
+            curated = task_contract.get("context", [])
+            if curated:
+                executor_history = [{
+                    "role": "system",
+                    "content": "Task context from the planner:\n" + "\n".join(curated),
+                }]
+            else:
+                executor_history = []
+
             result = execute_task(
                 task_contract,
                 request=state["request"],
-                history=state["messages"],
+                history=executor_history,
                 previous_results=state["work_history"],
                 run_tool=tool_runner(runtime),
                 review_feedback=state.get("review_feedback", ""),
@@ -156,12 +174,22 @@ def create_orchestrator_graph(
         }
 
     def reviewer(state: WorkflowState, runtime: Runtime[MemoryContext]):
+        # Use curated review context from the planner, not the full conversation
+        review_ctx = state.get("review_context", [])
+        if review_ctx:
+            reviewer_history = [{
+                "role": "system",
+                "content": "Project context from the planner:\n" + "\n".join(review_ctx),
+            }]
+        else:
+            reviewer_history = []
+
         try:
             assessment = review_work(
                 state["request"],
                 state["tasks"],
                 state["work_history"],
-                history=state["messages"],
+                history=reviewer_history,
                 run_tool=tool_runner(runtime),
                 on_event=on_event,
             )
