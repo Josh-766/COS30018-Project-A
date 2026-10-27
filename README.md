@@ -60,6 +60,83 @@ Short-term memory is conversation history persisted by LangGraph's `SqliteSaver`
 
 Memory defaults to `~/.local/share/cos30018/memory.sqlite`, outside the project directory. The old `memory/memories.db` remains untouched and is neither queried nor migrated. See the [memory design and run guide](Documentation/memory-v3.md) for configuration, limitations, and framework references.
 
+## Coding skills
+
+Skills are reusable instructions for this project's own agents. They are separate
+from saved memories and do not require Claude Code or Codex. Two original Anthropic
+skills are bundled in `skills/`:
+
+- [frontend-design](skills/frontend-design/SKILL.md): visual direction, typography,
+  layout, responsive interfaces and design critique.
+- [webapp-testing](skills/webapp-testing/SKILL.md): Playwright workflows for local
+  web applications, with a server helper and examples.
+
+See [sources and licenses](skills/SOURCES.md) for the pinned upstream revision and
+dependency details. Install the updated `requirements.txt` for the YAML parser.
+
+The single agent, planner, workers and reviewer receive a small catalog of skill
+names and descriptions. Coding agents are instructed to call `read_skill` before
+using a relevant skill; full instructions are returned as a tool result only when
+requested. `list_skills` refreshes the catalog and `read_skill_resource` reads linked
+text resources. The planner delegates skill use to workers. Selection is performed
+by the model, so you can name a skill explicitly when you want it used:
+
+```text
+Use $frontend-design to build a responsive landing page for a Melbourne bakery.
+Use $webapp-testing to check the signup form and report any failures.
+```
+
+| Command | Effect |
+| --- | --- |
+| `/skills` | List available skills, their descriptions and any invalid entries. |
+| `/skill frontend-design` | Print a skill's instructions and resource names. |
+
+These CLI commands only inspect files; they do not call the model or select a skill
+for the next request. Use a normal chat request such as the examples above to apply it.
+Skill tool calls appear in the existing tool output and multi-agent observation logs.
+
+To add another skill, place its folder in this harness's `skills/` directory:
+
+```text
+skills/
+  my-skill/
+    SKILL.md
+    references/       # optional
+    scripts/          # optional
+```
+
+The minimum `SKILL.md` is:
+
+```markdown
+---
+name: my-skill
+description: Explain what this skill does and when the agent should use it.
+---
+Write the task-specific instructions here. Link supporting files using paths
+relative to this folder, for example references/example.md.
+```
+
+Names must match the folder, use lowercase letters/digits/hyphens, and be at most
+64 characters; descriptions are limited to 1024 characters. UTF-8 files up to
+128 KiB are supported. Invalid entries are reported without hiding other skills.
+Copy the complete upstream folder, including referenced files and its license.
+New or edited skills are discovered on the next catalog/tool read; no restart is needed.
+
+When you select another project at startup, its `skills/` directory is also read.
+A valid project skill overrides a bundled skill with the same name for that session.
+Bundled skills remain available when the selected project has none. The loader does
+not consult personal Claude/Codex directories and does not put skills in the memory DB.
+
+Skill resources are read from the host by the skill tools, while project commands
+still run in Minikube. If a helper is needed, the worker can read its text with
+`read_skill_resource`, copy it into the sandbox using `write_file`, and run it there.
+Loading a skill never executes its scripts or installs dependencies. Browser tests
+need Playwright and a browser installed in the sandbox; the default Python image
+does not provide them. This harness has no image-viewing tool, so agents can inspect
+DOM/test results and capture screenshots when dependencies exist, but cannot claim
+to have visually reviewed the screenshots. Skill guidance remains subordinate to
+the user's request, the agent's role and the tools actually available.
+
 ## Tests
 
 The memory and graph tests use temporary databases and mocked model/sandbox calls; they require no API credentials, external API requests, or running Minikube.

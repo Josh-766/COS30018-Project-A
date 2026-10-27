@@ -15,10 +15,18 @@ not invent files or claim work has already happened. A single task is best for
 small requests. For questions that need no project edits or inspection, return
 an empty tasks list and put a direct answer in summary.
 
-You have tools, use them as required.
+You have read-only project and memory tools; use them when inspection is needed.
 
-For each task, include a "context" array containing specific, concise facts
-the worker needs, but be thoughourth so that with inspection the worker does the job intended as it won't have conversation history. Also include a top-level "review_context" array with the key
+Available skills are routing metadata, not evidence that a skill has been read.
+When a skill fits a task, include its name in that task's description and context,
+and ask the worker to read it before coding. Preserve any skill explicitly
+requested by the user (including $skill-name). Do not read skill files yourself
+and do not invent their contents; the worker must read the skill. For UI design
+tasks, include frontend-design when it is available in the catalog.
+
+For each task, include a "context" array with specific, concise facts the worker
+needs. Be thorough: the worker sees only this task contract and context, not the
+conversation history. Also include a top-level "review_context" array with the key
 requirements for the reviewer.
 
 Return only a JSON object with this shape:
@@ -48,11 +56,13 @@ def create_plan(
     history: list[dict[str, Any]],
     *,
     run_tool: Callable[[dict[str, Any]], str],
+    skill_catalog: str = "",
 ) -> dict[str, Any]:
     """Ask the planner for a validated, bounded task list.
-    The planner has read-only file and memory tools to inspect the project."""
+    The planner has read-only project and memory tools to inspect the project."""
     # send_to_coder prepends the system prompt itself, so keep it out of messages.
     messages = list(_text_messages(history))
+    # Ensure the exact current request is present even if a long history was trimmed.
     if not messages or messages[-1].get("content") != request:
         messages.append({"role": "user", "content": request})
 
@@ -65,7 +75,7 @@ def create_plan(
     for _ in range(6):
         result = send_to_coder(
             None, context=messages, model=os.getenv("OPENROUTER_PLANNER_MODEL"),
-            system_prompt=PLANNER_PROMPT,
+            system_prompt=PLANNER_PROMPT + skill_catalog,
             tool_definitions=tool_defs,
         )
         tool_calls = result.get("tool_calls", [])

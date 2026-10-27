@@ -7,8 +7,9 @@ from langgraph.func import task
 from langgraph.graph import END, START, StateGraph
 from langgraph.runtime import Runtime
 
-from agent_roles.coder import send_to_coder
+from agent_roles.coder import SYSTEM_PROMPT, send_to_coder
 from agent_roles.executor import AgentExecutionError, execute_task
+from skill_library import SkillLibrary
 from agent_roles.planner import create_plan
 from agent_roles.reviewer import review_work
 from memory import MemoryContext
@@ -38,8 +39,10 @@ class WorkflowState(TypedDict, total=False):
     review_context: list[str]
 
 
-def create_coder_graph(*, checkpointer, store, sandbox, project: Path):
+def create_coder_graph(*, checkpointer, store, sandbox, project: Path, skills=None):
     # Compile once per sandbox; invoke with a scoped thread config and context.
+
+    skills = skills if skills is not None else SkillLibrary(project)
 
     @task
     def run_tool(tool_call, memory_context):
@@ -50,10 +53,12 @@ def create_coder_graph(*, checkpointer, store, sandbox, project: Path):
             sandbox=sandbox,
             store=get_store(),
             memory_context=memory_context,
+            skills=skills,
         )
 
     def coder(state: CoderState):
-        result = send_to_coder(None, context=state["messages"])
+        result = send_to_coder(None, context=state["messages"],
+                               system_prompt=SYSTEM_PROMPT + skills.catalog_prompt())
         return {"messages": [result["message"]]}
 
     def tools(state: CoderState, runtime: Runtime[MemoryContext]):
@@ -83,9 +88,11 @@ def create_coder_graph(*, checkpointer, store, sandbox, project: Path):
 
 def create_orchestrator_graph(
     *, checkpointer, store, sandbox, project: Path, max_rework_attempts: int = 2,
-    on_event=None,
+    on_event=None, skills=None,
 ):
     # Plan, execute workers in order, review, and route bounded repair passes.
+
+    skills = skills if skills is not None else SkillLibrary(project)
 
     @task
     def run_tool(tool_call, memory_context):
@@ -95,6 +102,7 @@ def create_orchestrator_graph(
             sandbox=sandbox,
             store=get_store(),
             memory_context=memory_context,
+            skills=skills,
         )
 
     def tool_runner(runtime: Runtime[MemoryContext]):
@@ -111,12 +119,11 @@ def create_orchestrator_graph(
              if message.get("role") == "user"),
             "",
         )
-        
         plan = create_plan(
             request,
             state["messages"],
-            #added tool calling capacity to the 
             run_tool=tool_runner(runtime),
+            skill_catalog=skills.catalog_prompt(),
         )
         return {
             "request": request,
@@ -148,7 +155,7 @@ def create_orchestrator_graph(
                 "summary": "Dependencies not complete: " + ", ".join(blocked),
             }
         else:
-            #limited the context given to the executor to the planners context
+            # Workers see only the planner's curated context, not the whole thread.
             curated = task_contract.get("context", [])
             if curated:
                 executor_history = [{
@@ -166,6 +173,7 @@ def create_orchestrator_graph(
                 run_tool=tool_runner(runtime),
                 review_feedback=state.get("review_feedback", ""),
                 on_event=on_event,
+                skill_catalog=skills.catalog_prompt(),
             )
         return {
             "task_results": state["task_results"] + [result],
@@ -174,7 +182,7 @@ def create_orchestrator_graph(
         }
 
     def reviewer(state: WorkflowState, runtime: Runtime[MemoryContext]):
-        # Use curated review context from the planner, not the full conversation
+        # Use curated review context from the planner, not the full conversation.
         review_ctx = state.get("review_context", [])
         if review_ctx:
             reviewer_history = [{
@@ -192,6 +200,7 @@ def create_orchestrator_graph(
                 history=reviewer_history,
                 run_tool=tool_runner(runtime),
                 on_event=on_event,
+                skill_catalog=skills.catalog_prompt(),
             )
         except (AgentExecutionError, ValueError) as error:
             assessment = {"status": "FAIL", "feedback": f"Review failed: {error}", "summary": ""}
@@ -225,6 +234,8 @@ def create_orchestrator_graph(
             ),
             "depends_on": [],
             "files": [],
+            # Repair workers get the same curated project context as normal tasks.
+            "context": state.get("review_context", []),
         }
         return {"active_tasks": [task], "task_results": [], "task_index": 0}
 
