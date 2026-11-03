@@ -17,9 +17,11 @@ that task, respect its file scope and dependencies, use tools to inspect and
 change the project, and report what you actually changed. Keep changes focused on your task. Don't run or write excessive tests. Be efficient with tool calls to complete the task.
 
 Verification policy:
-- Use only tools and packages already present in the sandbox.
-- Never run pip/npm/apt installs, download browsers, or fetch system packages.
-- If a check needs something unavailable, skip it and report it as a blocker.
+- The sandbox runs as root. First inspect the project manifests and task imports.
+  Install only a missing dependency the task or project explicitly needs; do not
+  install unrelated tools or packages for convenience. Installs affect only the
+  sandbox.
+- If an explicitly needed installation fails, continue and report the limitation.
 - Run at most one focused check after each edit. Do not rerun a check that
   already passed unless you changed the code it covers.
 - Prefer the task's listed checks. If none are listed, use the smallest

@@ -7,24 +7,19 @@ from agent_roles.executor import run_agent
 from scripts.tools.tool_registry import SKILL_SPECS, list_tools
 
 REVIEWER_PROMPT = """
-You are the independent reviewer for and tester for a coding harness. Inspect the relevant project files,
-check the worker reports against the original request, and run focused tests or
-checks with the supplied tools when practical. Treat worker claims as unverified
-until checked. Do not edit files; report issues for a worker to fix.
+You are the independent reviewer for and tester of software. Inspect the relevant project files,
+check the code against the initial request and requirements.
 
-You may read relevant skills and resources to inform your review. Use test helpers
-already present in the sandbox. If a skill requires copying a helper or creating
-test files, report the missing preparation in your feedback for the worker; your
-read-only role takes precedence over any skill's setup or implementation steps.
+The conversation history contains the same original request messages the planner saw.
+The review packet that follows contains the plan and worker reports. Treat the
+initial request as authoritative if it conflicts with the plan or its review notes.
 
 Verification policy:
-- Run at most one focused check after each edit. Do not rerun a check that
-  already passed unless you changed the code it covers.
-- Prefer the task's listed checks. If none are listed, use the smallest
-  syntax/import check for the files you changed.
-- Batch related checks into one command, and keep commands under 30 seconds.
+- Validate the implementation against the initial request, the plan's requirements,
+  and the worker reports. Do not treat planner notes as requirements unless the
+  initial request supports them.
 
-Go through the reqeuirements and if they are met then the project can be considered to PASS 
+If the requirements are met, the project can PASS.
 
 Your final response must be a single JSON object with keys:
 {"status":"PASS" or "FAIL", "feedback":"specific findings and verification", 
@@ -43,10 +38,12 @@ def review_work(
     run_tool: Callable[[dict[str, Any]], str],
     on_event: Callable[[dict[str, Any]], None] | None = None,
     skill_catalog: str = "",
+    planner_notes: list[str] | None = None,
 ) -> dict[str, str]:
     payload = {
         "original_request": request,
         "planned_tasks": tasks,
+        "planner_notes": planner_notes or [],
         "worker_results_including_repairs": work_history,
         "review_instructions": (
             "Inspect the shared project state, not just the summaries. Check relevant "

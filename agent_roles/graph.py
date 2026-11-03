@@ -37,6 +37,7 @@ class WorkflowState(TypedDict, total=False):
     review_feedback: str
     review: dict[str, str]
     review_context: list[str]
+    planner_input_messages: list[dict[str, Any]]
 
 
 def create_coder_graph(*, checkpointer, store, sandbox, project: Path, skills=None):
@@ -137,6 +138,7 @@ def create_orchestrator_graph(
             "review_feedback": "",
             "review": {},
             "review_context": plan.get("review_context", []),
+            "planner_input_messages": plan.get("planner_input_messages", []),
         }
 
     def execute_worker(state: WorkflowState, runtime: Runtime[MemoryContext]):
@@ -182,15 +184,8 @@ def create_orchestrator_graph(
         }
 
     def reviewer(state: WorkflowState, runtime: Runtime[MemoryContext]):
-        # Use curated review context from the planner, not the full conversation.
-        review_ctx = state.get("review_context", [])
-        if review_ctx:
-            reviewer_history = [{
-                "role": "system",
-                "content": "Project context from the planner:\n" + "\n".join(review_ctx),
-            }]
-        else:
-            reviewer_history = []
+        # Give the reviewer the same original conversation the planner saw.
+        reviewer_history = list(state.get("planner_input_messages", []))
 
         try:
             assessment = review_work(
@@ -198,6 +193,7 @@ def create_orchestrator_graph(
                 state["tasks"],
                 state["work_history"],
                 history=reviewer_history,
+                planner_notes=state.get("review_context", []),
                 run_tool=tool_runner(runtime),
                 on_event=on_event,
                 skill_catalog=skills.catalog_prompt(),
