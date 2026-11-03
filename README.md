@@ -137,6 +137,40 @@ DOM/test results and capture screenshots when dependencies exist, but cannot cla
 to have visually reviewed the screenshots. Skill guidance remains subordinate to
 the user's request, the agent's role and the tools actually available.
 
+## BigCodeBench smoke run
+
+Install the dataset reader, then run a fixed 30-task subset through the normal
+CLI. Each task starts `main.py` with the selected agent mode, so graph creation
+and the Minikube sandbox continue through the existing code path:
+
+```powershell
+python -m pip install datasets
+python scripts/run_bigcodebench.py --mode orchestrator
+```
+
+Use `--mode single` for the single-agent graph. Task workspaces, generated
+`samples.jsonl`, and `references.jsonl` are saved under `bigcodebench_runs/`.
+Reference solutions stay outside the agent workspaces, so agents cannot read
+them. Use the samples with BigCodeBench's evaluator (`--samples`) for test-based
+grading, or compare each sample with its reference solution; see the
+[evaluation options](https://github.com/bigcode-project/bigcodebench/blob/main/ADVANCED_USAGE.md).
+
+To grade the latest run in PowerShell with BigCodeBench's evaluator container:
+
+```powershell
+$run = (Get-ChildItem .\bigcodebench_runs -Directory | Sort-Object Name -Descending | Select-Object -First 1).Name
+$ids = (Get-Content ".\bigcodebench_runs\$run\task_ids.txt") -join ","
+docker run --rm -v "${PWD}:/app" bigcodebench/bigcodebench-evaluate:latest `
+  --execution local --split instruct --subset hard `
+  --samples "/app/bigcodebench_runs/$run/samples.jsonl" `
+  --selective_evaluate $ids
+```
+
+The runner uses BigCodeBench-Hard dataset split `v0.1.4` and its first 30 rows.
+Its problems use varied libraries, while the agent sandbox remains the project's
+existing `python:3.12-slim` image. If a task needs a package absent from that image,
+the agent may be unable to run or verify the solution in the sandbox.
+
 ## Tests
 
 The memory and graph tests use temporary databases and mocked model/sandbox calls; they require no API credentials, external API requests, or running Minikube.

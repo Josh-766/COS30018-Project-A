@@ -65,6 +65,8 @@ def create_plan(
     if not messages or messages[-1].get("content") != request:
         messages.append({"role": "user", "content": request})
 
+    planner_input_messages = [dict(message) for message in messages]
+
     tool_defs = [
         tool for tool in list_tools()
         if tool["function"]["name"] in {"read_file", "list_files",
@@ -163,4 +165,5 @@ def create_plan(
         "summary": summary.strip(),
         "tasks": tasks,
         "review_context": review_context,
+        "planner_input_messages": planner_input_messages,
     }

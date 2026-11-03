@@ -7,9 +7,8 @@ spec:
   activeDeadlineSeconds: 7200
   automountServiceAccountToken: false
   securityContext:
-    runAsUser: 1000
-    runAsGroup: 1000
-    fsGroup: 1000
+    runAsUser: 0
+    runAsGroup: 0
   containers:
     - name: sandbox
       image: ${SANDBOX_IMAGE}
@@ -24,10 +23,8 @@ spec:
           cpu: "1"
           memory: 1Gi
       securityContext:
-        runAsNonRoot: true
-        allowPrivilegeEscalation: false
-        capabilities:
-          drop: ["ALL"]
+        runAsNonRoot: false
+        allowPrivilegeEscalation: true
   volumes:
     - name: workspace
       emptyDir: {}
